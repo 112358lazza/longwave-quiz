@@ -146,8 +146,8 @@ io.on('connection', (socket) => {
       room.votes[String.fromCharCode(65 + idx)] = 0; // A, B, C, D
     });
 
-    // Setup timer
-    room.secondsLeft = parseInt(question.timer) || 20;
+    // Setup timer (not used anymore, questions are manual)
+    room.secondsLeft = 999;
     room.questionStartTime = Date.now();
 
     // Broadcast event
@@ -159,23 +159,13 @@ io.on('connection', (socket) => {
         label: String.fromCharCode(65 + idx),
         text: opt
       })),
-      timer: room.secondsLeft,
+      timer: 999,
       mediaUrl: question.mediaUrl || '',
       mediaType: question.mediaType || 'none'
     });
 
-    // Host countdown loop
+    // Host countdown loop REMOVED
     if (room.questionTimer) clearInterval(room.questionTimer);
-    
-    room.questionTimer = setInterval(() => {
-      room.secondsLeft--;
-      io.to(roomCode).emit('timer-tick', { secondsLeft: room.secondsLeft });
-
-      if (room.secondsLeft <= 0) {
-        clearInterval(room.questionTimer);
-        endQuestion(roomCode, room);
-      }
-    }, 1000);
   }
 
   // Helper to end a question (reveal correct answer)
@@ -268,7 +258,12 @@ io.on('connection', (socket) => {
     
     if (!room || room.hostId !== socket.id) return;
 
-    if (room.state === 'REVEAL') {
+    if (room.state === 'QUESTION') {
+      // Manual host stop
+      if (room.questionTimer) clearInterval(room.questionTimer);
+      endQuestion(roomCode, room);
+    }
+    else if (room.state === 'REVEAL') {
       // Skip LEADERBOARD, go directly to next question or end game
       room.currentQuestionIndex++;
       

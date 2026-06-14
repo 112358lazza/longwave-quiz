@@ -134,16 +134,18 @@ socket.on('new-question', (data) => {
   showView('view-question');
   
   // Reset HUD inputs
-  document.getElementById('next-step-btn').style.display = 'none';
+  const nextBtn = document.getElementById('next-step-btn');
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = 'CHIUDI E SVELA';
+  nextBtn.classList.add('pulse-btn');
   document.getElementById('q-counter').textContent = `Domanda ${questionIndex + 1} di ${totalQuestions}`;
   document.getElementById('question-text').textContent = questionText;
   document.getElementById('answers-submitted-count').textContent = '0';
   document.getElementById('answers-total-players').textContent = totalPlayersCount;
 
-  // Reset SVG timer
-  const timerBar = document.getElementById('timer-bar-svg');
-  timerBar.style.strokeDashoffset = '0';
-  document.getElementById('timer-text-val').textContent = timer;
+  // Hide timer logic since questions are manual now
+  const timerWrapper = document.getElementById('timer-wrapper');
+  if(timerWrapper) timerWrapper.style.display = 'none';
   
   // Render options previews (bottom list)
   const optionsGrid = document.getElementById('presenter-preview-options');
@@ -523,7 +525,10 @@ socket.on('question-ended', (data) => {
   }
 
   // Reveal next progression button
-  document.getElementById('next-step-btn').style.display = 'block';
+  const nextBtn = document.getElementById('next-step-btn');
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = 'DOMANDA SUCCESSIVA';
+  nextBtn.classList.remove('pulse-btn');
   document.getElementById('game-status-logs').textContent = `Tempo scaduto! La risposta corretta è la ${correctOption}.`;
 });
 
