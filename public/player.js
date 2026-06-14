@@ -79,15 +79,9 @@ socket.on('new-question', (data) => {
 
   // Reset overlays
   hideFeedbackOverlays();
-  document.getElementById('player-timer-hint').textContent = `Tempo rimasto: ${timer}s`;
 
   // Show active answering pad
   showScreen('screen-answer-buttons');
-});
-
-// TIMER TICK
-socket.on('timer-tick', (data) => {
-  document.getElementById('player-timer-hint').textContent = `Tempo rimasto: ${data.secondsLeft}s`;
 });
 
 // ANSWER ACKNOWLEDGED (Result of submit)

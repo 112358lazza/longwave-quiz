@@ -3,7 +3,7 @@ const socket = io();
 let roomCode = null;
 let currentQuiz = null;
 let totalPlayersCount = 0;
-let currentQuestionTimerMax = 20;
+
 
 // Audio context permission helpers
 let audioLobby, audioTick, audioBuzzer, audioReveal, audioVictory;
@@ -123,8 +123,7 @@ socket.on('player-left', (data) => {
 
 // START QUESTION PHASE
 socket.on('new-question', (data) => {
-  const { questionIndex, totalQuestions, questionText, options, timer, mediaUrl, mediaType } = data;
-  currentQuestionTimerMax = timer;
+  const { questionIndex, totalQuestions, questionText, options, mediaUrl, mediaType } = data;
 
   // Stop lobby music if it's the first question
   stopAudio(audioLobby);
@@ -142,10 +141,6 @@ socket.on('new-question', (data) => {
   document.getElementById('question-text').textContent = questionText;
   document.getElementById('answers-submitted-count').textContent = '0';
   document.getElementById('answers-total-players').textContent = totalPlayersCount;
-
-  // Hide timer logic since questions are manual now
-  const timerWrapper = document.getElementById('timer-wrapper');
-  if(timerWrapper) timerWrapper.style.display = 'none';
   
   // Render options previews (bottom list)
   const optionsGrid = document.getElementById('presenter-preview-options');
@@ -296,22 +291,7 @@ socket.on('new-question', (data) => {
   document.getElementById('game-status-logs').textContent = `Domanda ${questionIndex + 1} proiettata.`;
 });
 
-// TIMER TICK
-socket.on('timer-tick', (data) => {
-  const secondsLeft = data.secondsLeft;
-  document.getElementById('timer-text-val').textContent = secondsLeft;
 
-  // Animate SVG circle timer bar
-  const timerBar = document.getElementById('timer-bar-svg');
-  const dashArray = 283; // 2 * Math.PI * 45
-  const offset = ((currentQuestionTimerMax - secondsLeft) / currentQuestionTimerMax) * dashArray;
-  timerBar.style.strokeDashoffset = offset;
-
-  // Play tick sounds on last 5 seconds
-  if (secondsLeft <= 5 && secondsLeft > 0) {
-    playAudio(audioTick);
-  }
-});
 
 // LIVE VOTE CHART UPDATE (when players vote)
 socket.on('vote-updated', (data) => {
@@ -411,9 +391,6 @@ socket.on('question-ended', (data) => {
   setTimeout(() => {
     playAudio(audioReveal);
   }, 300);
-
-  // Stop countdown ticking
-  stopAudio(audioTick);
 
   // Highlight correct answer card in preview options
   const previewOptions = document.getElementById('presenter-preview-options').children;
@@ -529,7 +506,7 @@ socket.on('question-ended', (data) => {
   nextBtn.style.display = 'block';
   nextBtn.textContent = 'DOMANDA SUCCESSIVA';
   nextBtn.classList.remove('pulse-btn');
-  document.getElementById('game-status-logs').textContent = `Tempo scaduto! La risposta corretta è la ${correctOption}.`;
+  document.getElementById('game-status-logs').textContent = `La risposta corretta è la ${correctOption}.`;
 });
 
 // SCOREBOARD LOBBY (Skipped now)

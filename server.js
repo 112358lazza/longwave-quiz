@@ -244,11 +244,7 @@ io.on('connection', (socket) => {
       votesCount: room.votes // Emits vote counts for charts
     });
 
-    // Check if everyone has answered
-    if (room.answersReceived >= room.players.size) {
-      clearInterval(room.questionTimer);
-      endQuestion(roomCode, room);
-    }
+
   });
 
   // 5. HOST: Next Step (Manual Progression)
