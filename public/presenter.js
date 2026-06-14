@@ -244,11 +244,17 @@ socket.on('new-question', (data) => {
     // Hide the options list at the bottom for word-cloud
     document.getElementById('presenter-preview-options').style.display = 'none';
     const letters = ['A', 'B', 'C', 'D'];
-    letters.forEach(letter => {
+    letters.forEach((letter, index) => {
       const el = document.getElementById('word-' + letter);
       if (el) {
         el.style.fontSize = '2rem';
         el.style.opacity = '1.0';
+        if (index < options.length) {
+          el.style.display = 'inline-block';
+          el.textContent = options[index].text;
+        } else {
+          el.style.display = 'none';
+        }
       }
     });
 

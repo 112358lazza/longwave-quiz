@@ -62,6 +62,7 @@ socket.on('join-error', (data) => {
 socket.on('new-question', (data) => {
   const { questionText, options, timer } = data;
   answeredThisRound = false;
+  window.currentQuestionOptions = options;
 
   // Reset answer buttons states
   const btns = document.querySelectorAll('.player-opt-btn');
@@ -118,6 +119,20 @@ socket.on('question-ended', (data) => {
       playAudio(audioCorrect);
     } else {
       document.getElementById('overlay-incorrect').style.display = 'flex';
+      
+      const correctOptionLetter = data.correctOption;
+      let correctText = '';
+      if (window.currentQuestionOptions) {
+        const foundOpt = window.currentQuestionOptions.find(o => o.label === correctOptionLetter);
+        if (foundOpt) {
+          correctText = foundOpt.text;
+        }
+      }
+      const feedbackTextEl = document.getElementById('incorrect-feedback-text');
+      if (feedbackTextEl) {
+        feedbackTextEl.textContent = `Hai sbagliato! La risposta corretta era: ${correctOptionLetter} - ${correctText}`;
+      }
+
       document.querySelector('.container').classList.add('shake');
       setTimeout(() => document.querySelector('.container').classList.remove('shake'), 400);
       playAudio(audioIncorrect);

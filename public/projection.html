@@ -53,18 +53,22 @@
         <div class="chart-bar-wrapper" id="bar-wrapper-A">
           <div class="chart-bar opt-a" id="bar-A" style="height: 10px;"><span class="chart-bar-value" id="val-A">0</span></div>
           <div class="chart-label opt-a">A</div>
+          <div class="chart-text" id="chart-text-A" style="margin-top: 10px; font-size: 1rem; font-weight: 700; text-align: center; color: var(--text-main); word-break: break-word;"></div>
         </div>
         <div class="chart-bar-wrapper" id="bar-wrapper-B">
           <div class="chart-bar opt-b" id="bar-B" style="height: 10px;"><span class="chart-bar-value" id="val-B">0</span></div>
           <div class="chart-label opt-b">B</div>
+          <div class="chart-text" id="chart-text-B" style="margin-top: 10px; font-size: 1rem; font-weight: 700; text-align: center; color: var(--text-main); word-break: break-word;"></div>
         </div>
         <div class="chart-bar-wrapper" id="bar-wrapper-C">
           <div class="chart-bar opt-c" id="bar-C" style="height: 10px;"><span class="chart-bar-value" id="val-C">0</span></div>
           <div class="chart-label opt-c">C</div>
+          <div class="chart-text" id="chart-text-C" style="margin-top: 10px; font-size: 1rem; font-weight: 700; text-align: center; color: var(--text-main); word-break: break-word;"></div>
         </div>
         <div class="chart-bar-wrapper" id="bar-wrapper-D">
           <div class="chart-bar opt-d" id="bar-D" style="height: 10px;"><span class="chart-bar-value" id="val-D">0</span></div>
           <div class="chart-label opt-d">D</div>
+          <div class="chart-text" id="chart-text-D" style="margin-top: 10px; font-size: 1rem; font-weight: 700; text-align: center; color: var(--text-main); word-break: break-word;"></div>
         </div>
       </div>
 
@@ -98,7 +102,12 @@
         <!-- SI Silhouette -->
         <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
           <div class="silhouette-container">
-            <div class="silhouette-body" id="silhouette-body-A"></div>
+            <div class="silhouette-body" id="silhouette-body-A">
+              <div class="silhouette-arm left"></div>
+              <div class="silhouette-arm right"></div>
+              <div class="silhouette-leg left"></div>
+              <div class="silhouette-leg right"></div>
+            </div>
           </div>
           <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">VERO</div>
           <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-A">0 voti</div>
@@ -107,7 +116,12 @@
         <!-- NO Silhouette -->
         <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
           <div class="silhouette-container">
-            <div class="silhouette-body" id="silhouette-body-B"></div>
+            <div class="silhouette-body" id="silhouette-body-B">
+              <div class="silhouette-arm left"></div>
+              <div class="silhouette-arm right"></div>
+              <div class="silhouette-leg left"></div>
+              <div class="silhouette-leg right"></div>
+            </div>
           </div>
           <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">FALSO</div>
           <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-B">0 voti</div>

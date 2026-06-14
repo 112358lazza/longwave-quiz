@@ -154,6 +154,10 @@ function renderQuestion(data) {
     if (barWrapper) {
       barWrapper.style.display = (index < options.length) ? 'flex' : 'none';
     }
+    const textEl = document.getElementById(`chart-text-${letter}`);
+    if (textEl) {
+      textEl.textContent = (index < options.length) ? options[index].text : '';
+    }
   });
 
   // Hide all visualizations
@@ -218,11 +222,17 @@ function renderQuestion(data) {
   } else if (currentQuestionVisual === 'word-cloud') {
     document.getElementById('wordcloud-visualization').style.display = 'flex';
     const letters = ['A', 'B', 'C', 'D'];
-    letters.forEach(letter => {
+    letters.forEach((letter, index) => {
       const el = document.getElementById('word-' + letter);
       if (el) {
         el.style.fontSize = '2.5rem';
         el.style.opacity = '1.0';
+        if (index < options.length) {
+          el.style.display = 'inline-block';
+          el.textContent = options[index].text;
+        } else {
+          el.style.display = 'none';
+        }
       }
     });
 

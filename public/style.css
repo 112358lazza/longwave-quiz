@@ -706,40 +706,61 @@ input:focus, select:focus, textarea:focus {
 }
 
 .silhouette-body {
-  width: 35px;
+  width: 24px;
   height: 90px; /* Scaled dynamically in JS */
   background: var(--color-primary);
-  border-radius: 15px 15px 0 0;
+  border-radius: 12px;
   position: relative;
   transition: height 0.8s cubic-bezier(0.19, 1, 0.22, 1);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  margin: 0 auto;
 }
 
 /* Head */
 .silhouette-body::before {
   content: '';
   position: absolute;
-  top: -24px;
+  top: -30px;
   left: 50%;
   transform: translateX(-50%);
   width: 22px;
   height: 22px;
   background: inherit;
   border-radius: 50%;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
 }
 
-/* Limbs / Arms styling */
-.silhouette-body::after {
-  content: '';
+/* Arms */
+.silhouette-arm {
   position: absolute;
-  top: 15px;
-  left: -6px;
-  width: 47px;
-  height: 12px;
+  top: 4px;
+  width: 10px;
+  height: calc(100% - 15px);
+  min-height: 40px;
+  border-radius: 5px;
   background: inherit;
-  border-radius: 10px;
-  opacity: 0.85;
+  transition: height 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.silhouette-arm.left {
+  left: -14px;
+}
+.silhouette-arm.right {
+  right: -14px;
+}
+
+/* Legs */
+.silhouette-leg {
+  position: absolute;
+  bottom: -50px;
+  width: 10px;
+  height: 45px;
+  border-radius: 5px;
+  background: inherit;
+}
+.silhouette-leg.left {
+  left: 0px;
+}
+.silhouette-leg.right {
+  right: 0px;
 }
 
 #silhouette-body-A {
