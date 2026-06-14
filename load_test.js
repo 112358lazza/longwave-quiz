@@ -90,6 +90,12 @@ function startSimulation() {
     if (data.answersReceived % 50 === 0 || data.answersReceived === TOTAL_PLAYERS) {
       console.log(`Risposte ricevute: ${data.answersReceived} / ${TOTAL_PLAYERS}`);
     }
+    
+    // Automatically close the question if all players have answered
+    if (data.answersReceived === TOTAL_PLAYERS) {
+      console.log("Tutti i giocatori hanno risposto. Host svela la risposta...");
+      hostSocket.emit('host-next-step', { roomCode });
+    }
   });
 
   hostSocket.on('question-ended', (data) => {
@@ -104,11 +110,8 @@ function startSimulation() {
     hostSocket.emit('host-next-step', { roomCode });
   });
 
-  hostSocket.on('show-leaderboard', (data) => {
-    console.log(`Classifica parziale calcolata (primi 3 classificati):`);
-    data.leaderboard.slice(0, 3).forEach((p, idx) => {
-      console.log(`  #${idx+1}: ${p.nickname} - ${p.score} punti`);
-    });
+  hostSocket.on('game-over', (data) => {
+    console.log("Stato di gioco completato ricevuto dall'host.");
 
     // Cleanup and terminate
     console.log("=== SIMULAZIONE COMPLETATA CON SUCCESSO ===");
@@ -142,7 +145,7 @@ function startSimulation() {
       });
 
       playerSocket.on('new-question', (qData) => {
-        answeredThisRound = false;
+        let answeredThisRound = false;
         // Simulate thinking time (random delay between 500ms and 2500ms)
         const delay = 500 + Math.random() * 2000;
         
