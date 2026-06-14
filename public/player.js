@@ -25,12 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('player-hud-name').textContent = nickname;
   document.getElementById('wait-lobby-pin').textContent = roomPin;
 
-  // Emit join event to server
-  socket.emit('player-join', {
-    roomCode: roomPin,
-    nickname: nickname
-  });
-
   document.getElementById('connection-status-hint').textContent = `Connessione alla stanza ${roomPin}...`;
 });
 
@@ -45,6 +39,12 @@ function playAudio(audioEl) {
 // 1. SOCKET.IO EVENT HANDLERS
 socket.on('connect', () => {
   document.getElementById('connection-status-hint').textContent = "Connesso al server.";
+  if (roomPin && nickname) {
+    socket.emit('player-join', {
+      roomCode: roomPin,
+      nickname: nickname
+    });
+  }
 });
 
 socket.on('join-success', (data) => {

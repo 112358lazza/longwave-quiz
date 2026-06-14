@@ -884,7 +884,8 @@ input:focus, select:focus, textarea:focus {
 .projection-body {
   overflow: hidden;
   padding: 40px;
-  background: #070414;
+  background: url('assets/bg.png') no-repeat center center fixed;
+  background-size: cover;
 }
 
 .projection-container {

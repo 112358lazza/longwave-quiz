@@ -23,7 +23,7 @@
     <p>Il motore per quiz e sondaggi in tempo reale per la tua convention. Gestisci le votazioni del pubblico all'istante.</p>
 
     <!-- Role Selection Cards -->
-    <div class="role-select">
+    <div class="role-select" id="role-select-section">
       <div class="role-card" onclick="selectRole('player')">
         <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #a78bfa;">Giocatore</h2>
         <p style="font-size: 0.85rem; margin-bottom: 0;">Entra nella stanza, rispondi alle domande dal tuo smartphone.</p>
@@ -39,7 +39,7 @@
     <div id="player-form-container" style="display: none; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
       <h2 style="font-size: 1.4rem;">Accedi alla sessione</h2>
       <form id="join-form">
-        <div class="form-group">
+        <div class="form-group" id="pin-group">
           <label for="room-pin">Game PIN (6 cifre)</label>
           <input type="text" id="room-pin" placeholder="Inserisci PIN stanza" maxlength="6" required style="text-align: center; font-size: 1.5rem; letter-spacing: 0.1em;">
         </div>
@@ -53,7 +53,7 @@
     </div>
 
     <!-- Creator Quick Link -->
-    <div style="margin-top: 2.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+    <div id="creator-link-section" style="margin-top: 2.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
       <p style="font-size: 0.9rem; margin-bottom: 0.8rem;">Vuoi creare o modificare le domande?</p>
       <a href="creator.html" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.6rem 1.5rem;">VAI AL CREATOR</a>
     </div>
@@ -76,8 +76,23 @@
       const urlParams = new URLSearchParams(window.location.search);
       const pinParam = urlParams.get('pin');
       if (pinParam) {
-        selectRole('player');
+        // Hide role select and creator links
+        document.getElementById('role-select-section').style.display = 'none';
+        document.getElementById('creator-link-section').style.display = 'none';
+        
+        // Hide pin input container
+        document.getElementById('pin-group').style.display = 'none';
+        
+        // Show player form automatically
+        const form = document.getElementById('player-form-container');
+        form.style.display = 'block';
+        form.style.borderTop = 'none';
+        form.style.paddingTop = '0';
+        
+        // Prefill pin
         document.getElementById('room-pin').value = pinParam;
+        
+        // Focus nickname
         document.getElementById('nickname').focus();
       }
     });

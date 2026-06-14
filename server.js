@@ -76,10 +76,95 @@ io.on('connection', (socket) => {
       return socket.emit('join-error', { message: 'La sessione è terminata.' });
     }
 
-    // Check duplicate nickname
+    // Check if player with the same nickname already exists in this room (reconnection support)
+    let existingPlayer = null;
+    let oldSocketId = null;
+    for (const [sid, p] of room.players.entries()) {
+      if (p.nickname.toLowerCase() === nickname.trim().toLowerCase()) {
+        existingPlayer = p;
+        oldSocketId = sid;
+        break;
+      }
+    }
+
+    if (existingPlayer) {
+      // Re-associate this player with the new socket ID
+      room.players.delete(oldSocketId);
+      existingPlayer.socketId = socket.id;
+      existingPlayer.connected = true;
+      room.players.set(socket.id, existingPlayer);
+      
+      socket.join(roomCode);
+      
+      // Notify player of successful join
+      socket.emit('join-success', { 
+        roomCode, 
+        nickname: existingPlayer.nickname,
+        playerId: socket.id 
+      });
+
+      // Notify host and room of reconnect (increases active player count)
+      const activePlayersCount = Array.from(room.players.values()).filter(p => p.connected !== false).length;
+      io.to(roomCode).emit('player-joined', { 
+        nickname: existingPlayer.nickname,
+        id: socket.id,
+        playerCount: activePlayersCount
+      });
+
+      console.log(`Player ${existingPlayer.nickname} reconnected to room ${roomCode} (state: ${room.state})`);
+
+      // Sync player state
+      if (room.state === 'QUESTION') {
+        const question = room.questions[room.currentQuestionIndex];
+        socket.emit('new-question', {
+          questionIndex: room.currentQuestionIndex,
+          totalQuestions: room.questions.length,
+          questionText: question.text,
+          options: question.options.map((opt, idx) => ({
+            label: String.fromCharCode(65 + idx),
+            text: opt
+          })),
+          mediaUrl: question.mediaUrl || '',
+          mediaType: question.mediaType || 'none'
+        });
+
+        // If they had already answered, send acknowledgement immediately so their UI displays wait overlay
+        if (existingPlayer.answered) {
+          const isPoll = (question.correctAnswer === -1 || question.correctAnswer === null || question.correctAnswer === undefined);
+          socket.emit('answer-acknowledged', { 
+            isCorrect: existingPlayer.lastCorrect, 
+            pointsEarned: 0, 
+            isPoll 
+          });
+        }
+      } else if (room.state === 'REVEAL') {
+        const question = room.questions[room.currentQuestionIndex];
+        socket.emit('new-question', {
+          questionIndex: room.currentQuestionIndex,
+          totalQuestions: room.questions.length,
+          questionText: question.text,
+          options: question.options.map((opt, idx) => ({
+            label: String.fromCharCode(65 + idx),
+            text: opt
+          })),
+          mediaUrl: question.mediaUrl || '',
+          mediaType: question.mediaType || 'none'
+        });
+        
+        const correctOptionLetter = String.fromCharCode(65 + question.correctAnswer);
+        socket.emit('question-ended', {
+          correctOption: correctOptionLetter,
+          correctIndex: question.correctAnswer,
+          votes: room.votes
+        });
+      }
+      return;
+    }
+
+    // Check duplicate nickname for actively connected players only
     for (const player of room.players.values()) {
-      if (player.nickname.toLowerCase() === nickname.trim().toLowerCase()) {
-        return socket.emit('join-error', { message: 'Questo nickname è già in uso.' });
+      if (player.connected !== false && player.nickname.toLowerCase() === nickname.trim().toLowerCase()) {
+        return socket.emit('join-error', { message: 'Questo nickname è già in uso da un utente attivo.' });
       }
     }
 
@@ -90,7 +175,8 @@ io.on('connection', (socket) => {
       score: 0,
       prevScore: 0,
       lastCorrect: false,
-      answered: false
+      answered: false,
+      connected: true
     };
 
     room.players.set(socket.id, playerObj);
@@ -103,11 +189,12 @@ io.on('connection', (socket) => {
       playerId: socket.id 
     });
 
-    // Notify host and other players (e.g. projection screen)
+    // Notify host and other players (increases active player count)
+    const activePlayersCount = Array.from(room.players.values()).filter(p => p.connected !== false).length;
     io.to(roomCode).emit('player-joined', { 
       nickname: playerObj.nickname,
       id: socket.id,
-      playerCount: room.players.size
+      playerCount: activePlayersCount
     });
 
     console.log(`Player ${playerObj.nickname} joined room ${roomCode} (state: ${room.state})`);
@@ -362,26 +449,28 @@ io.on('connection', (socket) => {
         rooms.delete(roomCode);
         break;
       } else if (room.players.has(socket.id)) {
-        // Player disconnected -> notify host
+        // Player disconnected -> mark disconnected (keep in map for session recovery)
         const player = room.players.get(socket.id);
-        room.players.delete(socket.id);
+        player.connected = false;
         
-        console.log(`Player ${player.nickname} left room ${roomCode}`);
+        console.log(`Player ${player.nickname} disconnected from room ${roomCode}`);
+        
+        const activePlayersCount = Array.from(room.players.values()).filter(p => p.connected !== false).length;
         
         io.to(roomCode).emit('player-left', {
           id: socket.id,
           nickname: player.nickname,
-          playerCount: room.players.size
+          playerCount: activePlayersCount
         });
 
-        // If in QUESTION, check if all active players have answered
+        // If in QUESTION, update answersReceived and totalPlayers based on actively connected ones
         if (room.state === 'QUESTION') {
-          const answeredCount = Array.from(room.players.values()).filter(p => p.answered).length;
+          const answeredCount = Array.from(room.players.values()).filter(p => p.connected !== false && p.answered).length;
           room.answersReceived = answeredCount;
 
           io.to(roomCode).emit('vote-updated', {
             answersReceived: room.answersReceived,
-            totalPlayers: room.players.size,
+            totalPlayers: activePlayersCount,
             votesCount: room.votes
           });
         }
