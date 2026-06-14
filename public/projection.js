@@ -1,175 +1,162 @@
 const socket = io();
 
 let roomCode = null;
-let currentQuiz = null;
 let totalPlayersCount = 0;
+let currentQuestionVisual = 'bar-chart';
+let currentQuestionCorrectOption = '';
+let currentQuestionCorrectIndex = -1;
 
-
-// Audio context permission helpers
-let audioLobby, audioTick, audioBuzzer, audioReveal, audioVictory;
-
-// 1. INIZIALIZZAZIONE DA INTERACTION OVERLAY
-function startHostDashboard() {
-  document.getElementById('interaction-overlay').style.display = 'none';
-
-  // Instantiate audio elements
-  audioLobby = document.getElementById('audio-lobby');
-  audioTick = document.getElementById('audio-tick');
-  audioBuzzer = document.getElementById('audio-buzzer');
-  audioReveal = document.getElementById('audio-reveal');
-  audioVictory = document.getElementById('audio-victory');
-
-  // Attempt to play lobby music (requires user gesture, which we just got!)
-  playAudio(audioLobby);
-
-  // Set local IP display
-  const currentHost = window.location.hostname;
-  document.getElementById('ip-address-display').textContent = currentHost;
-
-  // Load Quiz from localStorage
+document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
-  const quizIdIndex = parseInt(urlParams.get('quizId')) || 0;
-  
-  const stored = localStorage.getItem('multitemer_quizzes_v2');
-  if (stored) {
-    const quizzes = JSON.parse(stored);
-    currentQuiz = quizzes[quizIdIndex];
-  }
+  roomCode = urlParams.get('pin');
 
-  if (!currentQuiz) {
-    alert("Nessun quiz caricato. Sarai reindirizzato al Creator.");
-    window.location.href = 'creator.html';
+  if (!roomCode) {
+    alert("PIN Stanza mancante.");
+    window.location.href = 'index.html';
     return;
   }
 
-  // Register room on server
-  socket.emit('host-create-room', { questions: currentQuiz.questions });
-  
-  document.getElementById('game-status-logs').textContent = `Creazione stanza in corso per: ${currentQuiz.title}...`;
-}
-
-// Safe Audio Playback Helper
-function playAudio(audioEl) {
-  if (audioEl) {
-    audioEl.currentTime = 0;
-    audioEl.play().catch(e => console.log("Audio autoplay blocked or file missing:", e.message));
-  }
-}
-
-function stopAudio(audioEl) {
-  if (audioEl) {
-    audioEl.pause();
-    audioEl.currentTime = 0;
-  }
-}
-
-// 2. SOCKET SOCKET.IO EVENT LISTENERS
-socket.on('room-created', (data) => {
-  roomCode = data.roomCode;
-  
-  document.getElementById('pin-header-val').textContent = roomCode;
-  document.getElementById('lobby-pin-display').textContent = roomCode;
-  document.getElementById('game-status-logs').textContent = `Stanza creata! In attesa di giocatori.`;
-
-  // Generate dynamic QR code URL pointing to player portal with PIN autofill
-  const joinUrl = `${window.location.protocol}//${window.location.host}/index.html?pin=${roomCode}`;
-  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}&color=0-0-0&bgcolor=255-255-255`;
-  
-  document.getElementById('qr-code-img').src = qrCodeApiUrl;
-  document.getElementById('qr-pin-display').textContent = `PIN: ${roomCode}`;
-  document.getElementById('qr-badge').style.display = 'flex';
+  // Connect and join as a projection screen listener
+  socket.emit('projection-join', { roomCode });
 });
 
+// Setup dynamic QR badge on projection view
+function setupQRBadge(code) {
+  const joinUrl = `${window.location.protocol}//${window.location.host}/index.html?pin=${code}`;
+  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}&color=0-0-0&bgcolor=255-255-255`;
+  
+  const qrImg = document.getElementById('qr-code-img');
+  if (qrImg) {
+    qrImg.src = qrCodeApiUrl;
+    document.getElementById('qr-badge').style.display = 'flex';
+  }
+}
+
+// SYNC ON JOIN
+socket.on('projection-init', (data) => {
+  const { 
+    state, 
+    currentQuestionIndex, 
+    totalQuestions, 
+    answersReceived, 
+    votesCount, 
+    playerCount, 
+    players,
+    questionText,
+    options,
+    mediaUrl,
+    mediaType,
+    correctOption,
+    correctIndex,
+    visualization
+  } = data;
+
+  totalPlayersCount = playerCount;
+
+  // Setup QR Badge
+  setupQRBadge(roomCode);
+
+  // Set Player Count
+  const countSpan = document.getElementById('players-count-val');
+  if (countSpan) countSpan.textContent = playerCount;
+  const totalSpan = document.getElementById('answers-total-players');
+  if (totalSpan) totalSpan.textContent = playerCount;
+
+  // Populate lobby players list
+  const grid = document.getElementById('lobby-players-grid');
+  if (grid) {
+    grid.innerHTML = '';
+    players.forEach(p => {
+      const bubble = document.createElement('div');
+      bubble.className = 'player-bubble';
+      bubble.textContent = p;
+      grid.appendChild(bubble);
+    });
+  }
+
+  // Route state
+  if (state === 'LOBBY') {
+    showView('view-lobby');
+  } else if (state === 'QUESTION') {
+    showView('view-question');
+    renderQuestion({ questionIndex: currentQuestionIndex, totalQuestions, questionText, options, mediaUrl, mediaType, visualization });
+    updateVotesUI({ answersReceived, totalPlayers: playerCount, votesCount });
+  } else if (state === 'REVEAL') {
+    showView('view-question');
+    renderQuestion({ questionIndex: currentQuestionIndex, totalQuestions, questionText, options, mediaUrl, mediaType, visualization });
+    updateVotesUI({ answersReceived, totalPlayers: playerCount, votesCount });
+    revealAnswer({ correctOption, correctIndex });
+  } else if (state === 'GAME_OVER') {
+    showView('view-gameover');
+  }
+});
+
+// PLAYER JOINED
 socket.on('player-joined', (data) => {
   const { nickname, playerCount } = data;
   totalPlayersCount = playerCount;
 
-  document.getElementById('players-count-val').textContent = playerCount;
-  document.getElementById('answers-total-players').textContent = playerCount;
-  
-  // Add player to lobby grid
+  const countSpan = document.getElementById('players-count-val');
+  if (countSpan) countSpan.textContent = playerCount;
+  const totalSpan = document.getElementById('answers-total-players');
+  if (totalSpan) totalSpan.textContent = playerCount;
+
   const grid = document.getElementById('lobby-players-grid');
-  const bubble = document.createElement('div');
-  bubble.className = 'player-bubble';
-  bubble.id = `player-${data.id}`;
-  bubble.textContent = nickname;
-  grid.appendChild(bubble);
-
-  // Enable Start Button if at least 1 player is connected
-  if (playerCount >= 1) {
-    document.getElementById('start-game-btn').disabled = false;
+  if (grid) {
+    // If bubble is not already in grid, add it
+    const existing = document.getElementById(`player-${data.id}`);
+    if (!existing) {
+      const bubble = document.createElement('div');
+      bubble.className = 'player-bubble';
+      bubble.id = `player-${data.id}`;
+      bubble.textContent = nickname;
+      grid.appendChild(bubble);
+    }
   }
-
-  document.getElementById('game-status-logs').textContent = `${nickname} è entrato in gioco!`;
 });
 
+// PLAYER LEFT
 socket.on('player-left', (data) => {
-  const { id, nickname, playerCount } = data;
+  const { id, playerCount } = data;
   totalPlayersCount = playerCount;
 
-  document.getElementById('players-count-val').textContent = playerCount;
-  document.getElementById('answers-total-players').textContent = playerCount;
+  const countSpan = document.getElementById('players-count-val');
+  if (countSpan) countSpan.textContent = playerCount;
+  const totalSpan = document.getElementById('answers-total-players');
+  if (totalSpan) totalSpan.textContent = playerCount;
 
-  // Remove player bubble
   const playerBubble = document.getElementById(`player-${id}`);
   if (playerBubble) playerBubble.remove();
-
-  if (playerCount < 1) {
-    document.getElementById('start-game-btn').disabled = true;
-  }
-
-  document.getElementById('game-status-logs').textContent = `${nickname} è uscito.`;
 });
 
 // START QUESTION PHASE
 socket.on('new-question', (data) => {
-  const { questionIndex, totalQuestions, questionText, options, mediaUrl, mediaType } = data;
-
-  // Stop lobby music if it's the first question
-  stopAudio(audioLobby);
-  stopAudio(audioVictory);
-
-  // Toggle visible views
   showView('view-question');
+  renderQuestion(data);
+});
+
+// RENDER QUESTION ELEMENTS
+function renderQuestion(data) {
+  const { questionIndex, totalQuestions, questionText, options, mediaUrl, mediaType, visualization } = data;
   
-  // Reset HUD inputs
-  const nextBtn = document.getElementById('next-step-btn');
-  nextBtn.style.display = 'block';
-  nextBtn.textContent = 'CHIUDI E SVELA';
-  nextBtn.classList.add('pulse-btn');
-  document.getElementById('q-counter').textContent = `Domanda ${questionIndex + 1} di ${totalQuestions}`;
+  currentQuestionVisual = visualization || 'bar-chart';
+  currentQuestionCorrectOption = '';
+  currentQuestionCorrectIndex = -1;
+
   document.getElementById('question-text').textContent = questionText;
   document.getElementById('answers-submitted-count').textContent = '0';
   document.getElementById('answers-total-players').textContent = totalPlayersCount;
-  
-  // Render options previews (bottom list)
-  const optionsGrid = document.getElementById('presenter-preview-options');
-  optionsGrid.innerHTML = '';
-  options.forEach((opt, index) => {
-    const card = document.createElement('div');
-    card.className = `presenter-opt-card opt-${opt.label.toLowerCase()}`;
-    card.id = `preview-card-${opt.label}`;
-    card.innerHTML = `
-      <span class="presenter-opt-letter">${opt.label}</span>
-      <span>${opt.text}</span>
-    `;
-    optionsGrid.appendChild(card);
-  });
 
-  // Dynamically hide chart bars C and D if there are only 2 options
+  // Setup options C and D display logic
   const letterLabels = ['A', 'B', 'C', 'D'];
   letterLabels.forEach((letter, index) => {
     const barWrapper = document.getElementById(`bar-wrapper-${letter}`);
     if (barWrapper) {
-      if (index < options.length) {
-        barWrapper.style.display = 'flex';
-      } else {
-        barWrapper.style.display = 'none';
-      }
+      barWrapper.style.display = (index < options.length) ? 'flex' : 'none';
     }
   });
 
-  // Hide all chart visualization containers first
+  // Hide all visualizations
   const visContainers = [
     'votes-chart', 
     'cola-glass-visualization', 
@@ -182,18 +169,14 @@ socket.on('new-question', (data) => {
     if (el) el.style.display = 'none';
   });
 
-  // Check if we need to show the custom visualizations
-  const activeQuestion = currentQuiz && currentQuiz.questions[questionIndex];
-  const visType = activeQuestion ? activeQuestion.visualization : 'bar-chart';
-
-  if (visType === 'cola-glass') {
+  // Setup selected visualization
+  if (currentQuestionVisual === 'cola-glass') {
     document.getElementById('cola-glass-visualization').style.display = 'flex';
     document.getElementById('cola-liquid-A').style.height = '0%';
     document.getElementById('cola-liquid-B').style.height = '0%';
     document.getElementById('cola-val-A').textContent = '0 voti (0%)';
     document.getElementById('cola-val-B').textContent = '0 voti (0%)';
     
-    // Reset glass style highlights
     const glasses = document.querySelectorAll('.cola-glass');
     glasses.forEach(g => {
       g.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.5)';
@@ -205,29 +188,25 @@ socket.on('new-question', (data) => {
     generateColaBubbles('cola-liquid-A');
     generateColaBubbles('cola-liquid-B');
 
-  } else if (visType === 'stretching-silhouettes') {
+  } else if (currentQuestionVisual === 'stretching-silhouettes') {
     document.getElementById('silhouettes-visualization').style.display = 'flex';
     document.getElementById('silhouette-body-A').style.height = '90px';
     document.getElementById('silhouette-body-B').style.height = '90px';
     document.getElementById('silhouette-val-A').textContent = '0 voti';
     document.getElementById('silhouette-val-B').textContent = '0 voti';
 
-    // Reset highlights
     const bodies = document.querySelectorAll('.silhouette-body');
-    bodies.forEach(b => {
-      b.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)';
-    });
+    bodies.forEach(b => b.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)');
     const wrappers = document.querySelectorAll('.silhouette-wrapper');
     wrappers.forEach(w => w.style.opacity = '1.0');
 
-  } else if (visType === 'fish-bowl') {
+  } else if (currentQuestionVisual === 'fish-bowl') {
     document.getElementById('fishbowls-visualization').style.display = 'flex';
     document.getElementById('fishbowl-water-A').innerHTML = '';
     document.getElementById('fishbowl-water-B').innerHTML = '';
     document.getElementById('fishbowl-val-A').textContent = '0 pesci';
     document.getElementById('fishbowl-val-B').textContent = '0 pesci';
 
-    // Reset highlights
     const bowls = document.querySelectorAll('.fishbowl');
     bowls.forEach(b => {
       b.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.5)';
@@ -236,37 +215,32 @@ socket.on('new-question', (data) => {
     const wrappers = document.querySelectorAll('.fishbowl-wrapper');
     wrappers.forEach(w => w.style.opacity = '1.0');
 
-  } else if (visType === 'word-cloud') {
+  } else if (currentQuestionVisual === 'word-cloud') {
     document.getElementById('wordcloud-visualization').style.display = 'flex';
-    // Hide the options list at the bottom for word-cloud
-    document.getElementById('presenter-preview-options').style.display = 'none';
     const letters = ['A', 'B', 'C', 'D'];
     letters.forEach(letter => {
       const el = document.getElementById('word-' + letter);
       if (el) {
-        el.style.fontSize = '2rem';
+        el.style.fontSize = '2.5rem';
         el.style.opacity = '1.0';
       }
     });
 
   } else {
     document.getElementById('votes-chart').style.display = 'flex';
-    // Ensure the options list is visible for standard charts
-    document.getElementById('presenter-preview-options').style.display = 'grid';
-    // Reset live vote chart columns to minimum height (10px) and values to 0
     const letterLabels = ['A', 'B', 'C', 'D'];
     letterLabels.forEach(letter => {
       const bar = document.getElementById(`bar-${letter}`);
       if (bar) {
         bar.style.height = '10px';
-        bar.classList.remove('correct'); // Reset correctness highlights
+        bar.classList.remove('correct');
       }
       const valText = document.getElementById(`val-${letter}`);
       if (valText) valText.textContent = '0';
     });
   }
 
-  // Set Media Box (convention customizable image/video loader)
+  // Setup media box
   const mediaBox = document.getElementById('question-media-box');
   mediaBox.innerHTML = '';
   if (mediaType !== 'none' && mediaUrl) {
@@ -287,25 +261,20 @@ socket.on('new-question', (data) => {
   } else {
     mediaBox.style.display = 'none';
   }
-
-  document.getElementById('game-status-logs').textContent = `Domanda ${questionIndex + 1} proiettata.`;
-});
-
-
+}
 
 // LIVE VOTE CHART UPDATE (when players vote)
 socket.on('vote-updated', (data) => {
+  updateVotesUI(data);
+});
+
+function updateVotesUI(data) {
   const { answersReceived, totalPlayers, votesCount } = data;
   document.getElementById('answers-submitted-count').textContent = answersReceived;
 
-  const isColaActive = (document.getElementById('cola-glass-visualization').style.display === 'flex');
-  const isSilhouettesActive = (document.getElementById('silhouettes-visualization').style.display === 'flex');
-  const isFishActive = (document.getElementById('fishbowls-visualization').style.display === 'flex');
-  const isWordCloudActive = (document.getElementById('wordcloud-visualization').style.display === 'flex');
-
   const maxPlayers = totalPlayers || 1;
 
-  if (isColaActive) {
+  if (currentQuestionVisual === 'cola-glass') {
     const votesA = votesCount['A'] || 0;
     const votesB = votesCount['B'] || 0;
     const percentA = Math.round((votesA / maxPlayers) * 100);
@@ -317,13 +286,11 @@ socket.on('vote-updated', (data) => {
     document.getElementById('cola-val-A').textContent = `${votesA} ${votesA === 1 ? 'voto' : 'voti'} (${percentA}%)`;
     document.getElementById('cola-val-B').textContent = `${votesB} ${votesB === 1 ? 'voto' : 'voti'} (${percentB}%)`;
 
-  } else if (isSilhouettesActive) {
+  } else if (currentQuestionVisual === 'stretching-silhouettes') {
     const votesA = votesCount['A'] || 0;
     const votesB = votesCount['B'] || 0;
 
-    // A stretches taller: from 90px base up to 170px
     const heightA = 90 + Math.round((votesA / maxPlayers) * 80);
-    // B squashes shorter: from 90px base down to 45px
     const heightB = 90 - Math.round((votesB / maxPlayers) * 45);
 
     document.getElementById('silhouette-body-A').style.height = `${heightA}px`;
@@ -332,7 +299,7 @@ socket.on('vote-updated', (data) => {
     document.getElementById('silhouette-val-A').textContent = `${votesA} ${votesA === 1 ? 'voto' : 'voti'}`;
     document.getElementById('silhouette-val-B').textContent = `${votesB} ${votesB === 1 ? 'voto' : 'voti'}`;
 
-  } else if (isFishActive) {
+  } else if (currentQuestionVisual === 'fish-bowl') {
     const votesA = votesCount['A'] || 0;
     const votesB = votesCount['B'] || 0;
 
@@ -342,7 +309,7 @@ socket.on('vote-updated', (data) => {
     document.getElementById('fishbowl-val-A').textContent = `${votesA} ${votesA === 1 ? 'pesce' : 'pesci'}`;
     document.getElementById('fishbowl-val-B').textContent = `${votesB} ${votesB === 1 ? 'pesce' : 'pesci'}`;
 
-  } else if (isWordCloudActive) {
+  } else if (currentQuestionVisual === 'word-cloud') {
     const votesA = votesCount['A'] || 0;
     const votesB = votesCount['B'] || 0;
     const votesC = votesCount['C'] || 0;
@@ -353,8 +320,7 @@ socket.on('vote-updated', (data) => {
       const el = document.getElementById('word-' + letter);
       if (el) {
         const share = totalVotes > 0 ? votes / totalVotes : 0.25;
-        // Font size scales from 1.6rem to 4.5rem
-        const fontSize = 1.6 + (share * 3.2);
+        const fontSize = 1.6 + (share * 3.5);
         el.style.fontSize = `${fontSize}rem`;
       }
     };
@@ -365,7 +331,6 @@ socket.on('vote-updated', (data) => {
     scaleWord('D', votesD);
 
   } else {
-    // Re-scale chart heights based on percent distribution
     for (const [optionLetter, votes] of Object.entries(votesCount)) {
       const valSpan = document.getElementById(`val-${optionLetter}`);
       if (valSpan) valSpan.textContent = votes;
@@ -378,27 +343,15 @@ socket.on('vote-updated', (data) => {
       }
     }
   }
-});
+}
 
 // REVEAL CORRECT ANSWER PHASE
 socket.on('question-ended', (data) => {
-  const { correctOption, correctIndex, votes, playersStats } = data;
+  revealAnswer(data);
+});
 
-  // Play Buzzer
-  playAudio(audioBuzzer);
-
-  // Play reveal fan-fare shortly after
-  setTimeout(() => {
-    playAudio(audioReveal);
-  }, 300);
-
-  // Highlight correct answer card in preview options
-  const previewOptions = document.getElementById('presenter-preview-options').children;
-  for (let i = 0; i < previewOptions.length; i++) {
-    if (previewOptions[i].id !== `preview-card-${correctOption}`) {
-      previewOptions[i].style.opacity = '0.3'; // dim wrong options
-    }
-  }
+function revealAnswer(data) {
+  const { correctOption, correctIndex, votes } = data;
 
   // Highlight correct bar in chart
   const correctBar = document.getElementById(`bar-${correctOption}`);
@@ -407,8 +360,7 @@ socket.on('question-ended', (data) => {
   }
 
   // Highlight correct Coca-Cola glass (if active)
-  const isColaActive = (document.getElementById('cola-glass-visualization').style.display === 'flex');
-  if (isColaActive) {
+  if (currentQuestionVisual === 'cola-glass') {
     const wrapperA = document.getElementById('cola-liquid-A').closest('.cola-glass-wrapper');
     const wrapperB = document.getElementById('cola-liquid-B').closest('.cola-glass-wrapper');
     const glassA = document.getElementById('cola-liquid-A').parentElement;
@@ -426,8 +378,7 @@ socket.on('question-ended', (data) => {
   }
 
   // Highlight silhouettes (if active)
-  const isSilhouettesActive = (document.getElementById('silhouettes-visualization').style.display === 'flex');
-  if (isSilhouettesActive) {
+  if (currentQuestionVisual === 'stretching-silhouettes') {
     const wrapperA = document.getElementById('silhouette-body-A').closest('.silhouette-wrapper');
     const wrapperB = document.getElementById('silhouette-body-B').closest('.silhouette-wrapper');
     const bodyA = document.getElementById('silhouette-body-A');
@@ -443,8 +394,7 @@ socket.on('question-ended', (data) => {
   }
 
   // Highlight fishbowls (if active)
-  const isFishActive = (document.getElementById('fishbowls-visualization').style.display === 'flex');
-  if (isFishActive) {
+  if (currentQuestionVisual === 'fish-bowl') {
     const wrapperA = document.getElementById('fishbowl-water-A').closest('.fishbowl-wrapper');
     const wrapperB = document.getElementById('fishbowl-water-B').closest('.fishbowl-wrapper');
     const bowlA = document.getElementById('fishbowl-water-A').parentElement;
@@ -461,38 +411,20 @@ socket.on('question-ended', (data) => {
     }
   }
 
-  // Astronaut-reveal (Question 8, C correct)
-  const isAstronautReveal = (currentQuiz && currentQuiz.questions[correctIndex] && currentQuiz.questions[correctIndex].visualization === 'astronaut-reveal');
-  if (isAstronautReveal) {
-    const correctCard = document.getElementById(`preview-card-${correctOption}`);
-    if (correctCard && !correctCard.querySelector('.moon-reveal-badge')) {
-      const badge = document.createElement('span');
-      badge.className = 'moon-reveal-badge';
-      badge.style.marginLeft = 'auto';
-      badge.style.fontSize = '1.8rem';
-      badge.style.animation = 'popIn 0.5s ease-out forwards';
-      badge.textContent = '🇺🇸 👨‍🚀';
-      correctCard.appendChild(badge);
-    }
-  }
-
-  // Word Cloud highlights (Question 9, poll)
-  const isWordCloudActive = (document.getElementById('wordcloud-visualization').style.display === 'flex');
-  if (isWordCloudActive) {
+  // Word Cloud highlights (dim non-winners)
+  if (currentQuestionVisual === 'word-cloud') {
     let letters = ['A', 'B', 'C', 'D'];
     let maxVotes = -1;
     let winnerLetter = 'A';
     
-    // Find winner
     letters.forEach(letter => {
-      const votes = votes[letter] || 0;
-      if (votes > maxVotes) {
-        maxVotes = votes;
+      const v = votes[letter] || 0;
+      if (v > maxVotes) {
+        maxVotes = v;
         winnerLetter = letter;
       }
     });
 
-    // Dim losers
     letters.forEach(letter => {
       const el = document.getElementById('word-' + letter);
       if (el && letter !== winnerLetter && maxVotes > 0) {
@@ -500,53 +432,25 @@ socket.on('question-ended', (data) => {
       }
     });
   }
+}
 
-  // Reveal next progression button
-  const nextBtn = document.getElementById('next-step-btn');
-  nextBtn.style.display = 'block';
-  nextBtn.textContent = 'DOMANDA SUCCESSIVA';
-  nextBtn.classList.remove('pulse-btn');
-  document.getElementById('game-status-logs').textContent = `La risposta corretta è la ${correctOption}.`;
-});
-
-// SCOREBOARD LOBBY (Skipped now)
-socket.on('show-leaderboard', (data) => {
-  // We no longer display the leaderboard view
-  // Server will automatically skip this state anyway
-});
-
-// GAME OVER FINAL STANDINGS
+// GAME OVER
 socket.on('game-over', (data) => {
   showView('view-gameover');
 });
 
-// Host disconnected alert
+// Disconnected
 socket.on('room-closed', (data) => {
   alert(data.message);
   window.location.href = 'index.html';
 });
 
-// 3. EMISSION TRIGGERS FROM BUTTONS
-function emitStartGame() {
-  if (!roomCode) return;
-  socket.emit('host-start-game', { roomCode });
-}
-
-function emitNextStep() {
-  if (!roomCode) return;
-  socket.emit('host-next-step', { roomCode });
-}
-
-// 4. GENERAL HELPER FOR TOGGLING VIEWS
+// GENERAL HELPER FOR TOGGLING VIEWS
 function showView(viewId) {
-  const views = ['view-lobby', 'view-question', 'view-leaderboard', 'view-gameover'];
+  const views = ['view-lobby', 'view-question', 'view-gameover'];
   views.forEach(v => {
     const el = document.getElementById(v);
-    if (v === viewId) {
-      el.style.display = 'block';
-    } else {
-      el.style.display = 'none';
-    }
+    if (el) el.style.display = (v === viewId) ? 'block' : 'none';
   });
 }
 
@@ -554,11 +458,9 @@ function showView(viewId) {
 function generateColaBubbles(liquidId) {
   const container = document.getElementById(liquidId);
   if (!container) return;
-  // Remove existing bubbles (keeping the foam div)
   const existingBubbles = container.querySelectorAll('.cola-bubble');
   existingBubbles.forEach(b => b.remove());
   
-  // Add 15 new random bubbles
   for (let i = 0; i < 15; i++) {
     const bubble = document.createElement('div');
     bubble.className = 'cola-bubble';
@@ -566,7 +468,6 @@ function generateColaBubbles(liquidId) {
     bubble.style.animationDelay = `${Math.random() * 2.0}s`;
     bubble.style.setProperty('--drift', `${Math.random() * 30 - 15}px`);
     
-    // Random size scale (2px to 5px)
     const size = Math.random() * 3 + 2;
     bubble.style.width = `${size}px`;
     bubble.style.height = `${size}px`;
@@ -574,7 +475,7 @@ function generateColaBubbles(liquidId) {
   }
 }
 
-// Helper to spawn/remove little goldfish in bowl water dynamically
+// Helper to spawn/remove goldfish
 function updateBowlFish(waterId, targetCount) {
   const container = document.getElementById(waterId);
   if (!container) return;
@@ -585,7 +486,6 @@ function updateBowlFish(waterId, targetCount) {
     for (let i = 0; i < diff; i++) {
       const fish = document.createElement('div');
       fish.className = 'little-fish';
-      // Restrict coordinate ranges to stay inside circular container
       fish.style.top = `${25 + Math.random() * 50}%`;
       fish.style.left = `${15 + Math.random() * 55}%`;
       fish.style.animationDelay = `${Math.random() * 3.5}s`;
@@ -597,11 +497,5 @@ function updateBowlFish(waterId, targetCount) {
     for (let i = 0; i < diff; i++) {
       fishes[i].remove();
     }
-  }
-}
-
-function openProjectionWindow() {
-  if (roomCode) {
-    window.open(`projection.html?pin=${roomCode}`, '_blank');
   }
 }

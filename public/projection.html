@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitemer - Proiezione Maxi Schermo</title>
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="projection-body">
+  <div class="glow-sphere glow-1" style="display: block;"></div>
+  <div class="glow-sphere glow-2" style="display: block;"></div>
+
+  <!-- Floating QR Code in Top Right -->
+  <div id="qr-badge" class="fixed-qr" style="display: none;">
+    <p>INQUADRA PER GIOCARE</p>
+    <img id="qr-code-img" src="" alt="QR Code" style="width: 130px; height: 130px;">
+  </div>
+
+  <div class="projection-container">
+    
+    <!-- 1. LOBBY VIEW -->
+    <div id="view-lobby" style="display: block; text-align: center; width: 100%;">
+      <h2 style="font-size: 3rem; margin-bottom: 2rem; font-weight: 800;">In attesa dei partecipanti...</h2>
+      <p style="font-size: 1.5rem; color: var(--text-muted);">Inquadra il codice QR in alto a destra con il telefono per entrare in stanza!</p>
+      
+      <div class="player-grid" id="lobby-players-grid" style="max-height: 350px; margin-top: 3rem;">
+        <!-- Populated dynamically via JS -->
+      </div>
+      
+      <div style="margin-top: 2rem; font-size: 1.5rem; font-weight: 700; color: #a78bfa;">
+        Giocatori connessi: <span id="players-count-val">0</span>
+      </div>
+    </div>
+
+    <!-- 2. QUESTION & REAL-TIME VOTING VIEW -->
+    <div id="view-question" style="display: none; width: 100%;">
+      <h1 id="question-text" class="projection-question-text">Testo della domanda?</h1>
+
+      <!-- Convention Media Integration Area -->
+      <div class="media-container" id="question-media-box" style="display: none; margin: 2rem auto; max-height: 300px;">
+        <!-- Loaded dynamically via JS -->
+      </div>
+
+      <!-- Real-time visualizations -->
+      
+      <!-- Standard Bar Chart -->
+      <div id="votes-chart" style="display: none; align-items: flex-end; justify-content: space-around; width: 100%; height: 300px; margin-top: 2rem; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1);">
+        <div class="chart-bar-wrapper" id="bar-wrapper-A">
+          <div class="chart-bar opt-a" id="bar-A" style="height: 10px;"><span class="chart-bar-value" id="val-A">0</span></div>
+          <div class="chart-label opt-a">A</div>
+        </div>
+        <div class="chart-bar-wrapper" id="bar-wrapper-B">
+          <div class="chart-bar opt-b" id="bar-B" style="height: 10px;"><span class="chart-bar-value" id="val-B">0</span></div>
+          <div class="chart-label opt-b">B</div>
+        </div>
+        <div class="chart-bar-wrapper" id="bar-wrapper-C">
+          <div class="chart-bar opt-c" id="bar-C" style="height: 10px;"><span class="chart-bar-value" id="val-C">0</span></div>
+          <div class="chart-label opt-c">C</div>
+        </div>
+        <div class="chart-bar-wrapper" id="bar-wrapper-D">
+          <div class="chart-bar opt-d" id="bar-D" style="height: 10px;"><span class="chart-bar-value" id="val-D">0</span></div>
+          <div class="chart-label opt-d">D</div>
+        </div>
+      </div>
+
+      <!-- Coca-Cola Custom Glass Visualization -->
+      <div id="cola-glass-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 300px; margin-top: 2rem; padding-bottom: 15px;">
+        <!-- SI Glass -->
+        <div class="cola-glass-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="cola-glass">
+            <div class="cola-liquid" id="cola-liquid-A">
+              <div class="cola-foam"></div>
+            </div>
+          </div>
+          <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">SI</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="cola-val-A">0 voti (0%)</div>
+        </div>
+
+        <!-- NO Glass -->
+        <div class="cola-glass-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="cola-glass">
+            <div class="cola-liquid" id="cola-liquid-B">
+              <div class="cola-foam"></div>
+            </div>
+          </div>
+          <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">NO</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="cola-val-B">0 voti (0%)</div>
+        </div>
+      </div>
+
+      <!-- Stretching Silhouettes Visualization -->
+      <div id="silhouettes-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 300px; margin-top: 2rem; padding-bottom: 15px;">
+        <!-- SI Silhouette -->
+        <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="silhouette-container">
+            <div class="silhouette-body" id="silhouette-body-A"></div>
+          </div>
+          <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">VERO</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-A">0 voti</div>
+        </div>
+
+        <!-- NO Silhouette -->
+        <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="silhouette-container">
+            <div class="silhouette-body" id="silhouette-body-B"></div>
+          </div>
+          <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">FALSO</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-B">0 voti</div>
+        </div>
+      </div>
+
+      <!-- Fish Bowl Visualization -->
+      <div id="fishbowls-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 300px; margin-top: 2rem; padding-bottom: 15px;">
+        <!-- SI Bowl -->
+        <div class="fishbowl-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="fishbowl">
+            <div class="fishbowl-water" id="fishbowl-water-A"></div>
+          </div>
+          <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">SÌ</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="fishbowl-val-A">0 pesci</div>
+        </div>
+
+        <!-- NO Bowl -->
+        <div class="fishbowl-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+          <div class="fishbowl">
+            <div class="fishbowl-water" id="fishbowl-water-B"></div>
+          </div>
+          <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">NO</div>
+          <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="fishbowl-val-B">0 pesci</div>
+        </div>
+      </div>
+
+      <!-- Word Cloud Visualization -->
+      <div id="wordcloud-visualization" style="display: none; justify-content: center; align-items: center; flex-wrap: wrap; gap: 3rem; min-height: 250px; width: 100%; margin-top: 2rem;">
+        <div class="cloud-word" id="word-A">Coraggio</div>
+        <div class="cloud-word" id="word-B">Curiosità</div>
+        <div class="cloud-word" id="word-C">Fiducia</div>
+        <div class="cloud-word" id="word-D">Collaborazione</div>
+      </div>
+
+      <!-- Votes count status -->
+      <div style="margin-top: 2.5rem; font-size: 1.3rem; font-weight: 600; color: var(--text-muted); text-align: center;">
+        Risposte ricevute: <span id="answers-submitted-count" style="color: #fff;">0</span> / <span id="answers-total-players">0</span>
+      </div>
+    </div>
+
+    <!-- 3. GAME OVER VIEW -->
+    <div id="view-gameover" style="display: none; text-align: center; margin-top: 4rem; width: 100%;">
+      <h1 style="font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, #fff 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GRAZIE PER AVER PARTECIPATO!</h1>
+      <h2 style="color: #818cf8; font-size: 2.2rem; margin-top: 1.5rem;">L'esperienza interattiva è completata.</h2>
+    </div>
+
+  </div>
+
+  <img src="assets/logo.png" alt="Longwave Logo" class="bottom-logo" style="width: 300px; bottom: 30px;">
+  
+  <script src="projection.js"></script>
+</body>
+</html>

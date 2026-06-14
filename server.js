@@ -71,8 +71,9 @@ io.on('connection', (socket) => {
       return socket.emit('join-error', { message: 'Stanza non trovata. Controlla il PIN.' });
     }
 
-    if (room.state !== 'LOBBY') {
-      return socket.emit('join-error', { message: 'Il gioco è già iniziato.' });
+    // Allow joining during LOBBY, QUESTION, and REVEAL
+    if (room.state !== 'LOBBY' && room.state !== 'QUESTION' && room.state !== 'REVEAL') {
+      return socket.emit('join-error', { message: 'La sessione è terminata.' });
     }
 
     // Check duplicate nickname
@@ -102,14 +103,85 @@ io.on('connection', (socket) => {
       playerId: socket.id 
     });
 
-    // Notify host and other players
-    io.to(room.hostId).emit('player-joined', { 
+    // Notify host and other players (e.g. projection screen)
+    io.to(roomCode).emit('player-joined', { 
       nickname: playerObj.nickname,
       id: socket.id,
       playerCount: room.players.size
     });
 
-    console.log(`Player ${playerObj.nickname} joined room ${roomCode}`);
+    console.log(`Player ${playerObj.nickname} joined room ${roomCode} (state: ${room.state})`);
+
+    // If joining mid-game during QUESTION, send them the current question immediately
+    if (room.state === 'QUESTION') {
+      const question = room.questions[room.currentQuestionIndex];
+      socket.emit('new-question', {
+        questionIndex: room.currentQuestionIndex,
+        totalQuestions: room.questions.length,
+        questionText: question.text,
+        options: question.options.map((opt, idx) => ({
+          label: String.fromCharCode(65 + idx),
+          text: opt
+        })),
+        mediaUrl: question.mediaUrl || '',
+        mediaType: question.mediaType || 'none'
+      });
+    } else if (room.state === 'REVEAL') {
+      // Send new-question then question-ended immediately so player goes to wait state
+      const question = room.questions[room.currentQuestionIndex];
+      socket.emit('new-question', {
+        questionIndex: room.currentQuestionIndex,
+        totalQuestions: room.questions.length,
+        questionText: question.text,
+        options: question.options.map((opt, idx) => ({
+          label: String.fromCharCode(65 + idx),
+          text: opt
+        })),
+        mediaUrl: question.mediaUrl || '',
+        mediaType: question.mediaType || 'none'
+      });
+      
+      const correctOptionLetter = String.fromCharCode(65 + question.correctAnswer);
+      socket.emit('question-ended', {
+        correctOption: correctOptionLetter,
+        correctIndex: question.correctAnswer,
+        votes: room.votes
+      });
+    }
+  });
+
+  // 2b. PROJECTION: Join Room (Listen to Host State)
+  socket.on('projection-join', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    if (!room) {
+      return socket.emit('join-error', { message: 'Stanza non trovata.' });
+    }
+
+    socket.join(roomCode);
+    console.log(`Projection joined room ${roomCode}`);
+
+    // Send initial status to sync the projection screen
+    const question = room.questions[room.currentQuestionIndex];
+    socket.emit('projection-init', {
+      state: room.state,
+      currentQuestionIndex: room.currentQuestionIndex,
+      totalQuestions: room.questions.length,
+      answersReceived: room.answersReceived,
+      votesCount: room.votes,
+      playerCount: room.players.size,
+      players: Array.from(room.players.values()).map(p => p.nickname),
+      questionText: question ? question.text : '',
+      options: question ? question.options.map((opt, idx) => ({
+        label: String.fromCharCode(65 + idx),
+        text: opt
+      })) : [],
+      mediaUrl: question ? (question.mediaUrl || '') : '',
+      mediaType: question ? (question.mediaType || 'none') : 'none',
+      correctOption: question ? String.fromCharCode(65 + question.correctAnswer) : '',
+      correctIndex: question ? question.correctAnswer : -1,
+      visualization: question ? question.visualization : 'bar-chart'
+    });
   });
 
   // 3. HOST: Start Game
@@ -161,7 +233,8 @@ io.on('connection', (socket) => {
       })),
       timer: 999,
       mediaUrl: question.mediaUrl || '',
-      mediaType: question.mediaType || 'none'
+      mediaType: question.mediaType || 'none',
+      visualization: question.visualization || 'bar-chart'
     });
 
     // Host countdown loop REMOVED
@@ -237,11 +310,11 @@ io.on('connection', (socket) => {
     // Acknowledge to player
     socket.emit('answer-acknowledged', { isCorrect, pointsEarned, isPoll });
 
-    // Emit live stats update to Host only (do not reveal answers, just vote counts)
-    io.to(room.hostId).emit('vote-updated', {
+    // Emit live stats update to Host and Projection screen (do not reveal answers, just vote counts)
+    io.to(roomCode).emit('vote-updated', {
       answersReceived: room.answersReceived,
       totalPlayers: room.players.size,
-      votesCount: room.votes // Emits vote counts for charts
+      votesCount: room.votes
     });
 
 
@@ -295,7 +368,7 @@ io.on('connection', (socket) => {
         
         console.log(`Player ${player.nickname} left room ${roomCode}`);
         
-        io.to(room.hostId).emit('player-left', {
+        io.to(roomCode).emit('player-left', {
           id: socket.id,
           nickname: player.nickname,
           playerCount: room.players.size
@@ -303,21 +376,14 @@ io.on('connection', (socket) => {
 
         // If in QUESTION, check if all active players have answered
         if (room.state === 'QUESTION') {
-          // Adjust answersReceived if the player who disconnected had already answered
-          // To be simple, we check if everyone left has answered
           const answeredCount = Array.from(room.players.values()).filter(p => p.answered).length;
           room.answersReceived = answeredCount;
 
-          io.to(room.hostId).emit('vote-updated', {
+          io.to(roomCode).emit('vote-updated', {
             answersReceived: room.answersReceived,
             totalPlayers: room.players.size,
             votesCount: room.votes
           });
-
-          if (room.players.size > 0 && room.answersReceived >= room.players.size) {
-            clearInterval(room.questionTimer);
-            endQuestion(roomCode, room);
-          }
         }
         break;
       }

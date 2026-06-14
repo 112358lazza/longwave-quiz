@@ -67,11 +67,9 @@ socket.on('new-question', (data) => {
   const btns = document.querySelectorAll('.player-opt-btn');
   btns.forEach((btn, idx) => {
     btn.disabled = false;
-    // Hide buttons that are not used (if question has less than 4 options)
-    const optLabel = btn.textContent.trim();
-    const optIdx = optLabel.charCodeAt(0) - 65; // A=0, B=1, C=2, D=3
-    if (optIdx < options.length) {
+    if (idx < options.length) {
       btn.style.display = 'flex';
+      btn.innerHTML = `<span class="player-opt-letter">${options[idx].label}</span><span class="player-opt-text">${options[idx].text}</span>`;
     } else {
       btn.style.display = 'none';
     }
