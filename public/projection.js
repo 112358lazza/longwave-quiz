@@ -319,9 +319,15 @@ function updateVotesUI(data) {
     const scaleWord = (letter, votes) => {
       const el = document.getElementById('word-' + letter);
       if (el) {
-        const share = totalVotes > 0 ? votes / totalVotes : 0.25;
-        const fontSize = 1.6 + (share * 3.5);
-        el.style.fontSize = `${fontSize}rem`;
+        if (totalVotes === 0) {
+          el.style.fontSize = '2.5rem';
+          el.style.opacity = '0.8';
+        } else {
+          const share = votes / totalVotes;
+          const fontSize = 1.2 + (share * 3.8);
+          el.style.fontSize = `${fontSize}rem`;
+          el.style.opacity = votes > 0 ? '1.0' : '0.4';
+        }
       }
     };
 

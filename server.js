@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
 
   // 1. HOST: Create Room
   socket.on('host-create-room', (data) => {
-    const { questions } = data;
+    const { questions, redirectUrl } = data;
     const roomCode = generateRoomCode();
     
     rooms.set(roomCode, {
@@ -45,6 +45,7 @@ io.on('connection', (socket) => {
       state: 'LOBBY',
       players: new Map(),
       questions: questions || [],
+      redirectUrl: redirectUrl || 'https://www.google.it',
       currentQuestionIndex: -1,
       answersReceived: 0,
       votes: {},
@@ -428,8 +429,11 @@ io.on('connection', (socket) => {
       } else {
         // Game Over!
         room.state = 'GAME_OVER';
-        // Send an empty standings array since we removed points
-        io.to(roomCode).emit('game-over', { standings: [] });
+        // Send an empty standings array since we removed points and pass redirect URL
+        io.to(roomCode).emit('game-over', { 
+          standings: [],
+          redirectUrl: room.redirectUrl || 'https://www.google.it'
+        });
       }
     }
   });

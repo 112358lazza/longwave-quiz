@@ -114,7 +114,6 @@ socket.on('question-ended', (data) => {
     if (window.lastResult.isPoll) {
       document.getElementById('overlay-poll-thanks').style.display = 'flex';
     } else if (window.lastResult.isCorrect) {
-      document.getElementById('points-earned-display').textContent = `+${window.lastResult.pointsEarned} punti!`;
       document.getElementById('overlay-correct').style.display = 'flex';
       playAudio(audioCorrect);
     } else {
@@ -135,6 +134,15 @@ socket.on('show-leaderboard', (data) => {
 socket.on('game-over', (data) => {
   hideFeedbackOverlays();
   showScreen('screen-gameover');
+
+  const redirectUrl = data.redirectUrl || 'https://www.google.it';
+  setTimeout(() => {
+    let target = redirectUrl;
+    if (!/^https?:\/\//i.test(target)) {
+      target = 'https://' + target;
+    }
+    window.location.href = target;
+  }, 3000);
 });
 
 // Host disconnected

@@ -3,6 +3,7 @@ const DEFAULT_QUIZZES = [
   {
     id: "default-trivia",
     title: "Quiz di Benvenuto (Trivia)",
+    redirectUrl: "https://www.google.it",
     questions: [
       {
         text: "La Coca-Cola aiuta a digerire?",
@@ -159,6 +160,9 @@ function loadSelectedQuiz() {
     return;
   }
 
+  const quiz = quizzes[activeQuizIndex];
+  document.getElementById('quiz-redirect-url').value = quiz.redirectUrl || 'https://www.google.it';
+
   activeQuestionIndex = 0;
   renderQuestionsSidebar();
   loadQuestionIntoEditor();
@@ -171,6 +175,7 @@ function createNewQuiz() {
   const newQuiz = {
     id: 'quiz-' + Date.now(),
     title: title,
+    redirectUrl: 'https://www.google.it',
     questions: [
       {
         text: "Esempio prima domanda?",
@@ -401,4 +406,13 @@ function startHostWithThisQuiz() {
   if (!quiz) return;
   // Redirect to presenter with active index
   window.location.href = `presenter.html?quizId=${activeQuizIndex}`;
+}
+
+function saveQuizSettings() {
+  const quiz = quizzes[activeQuizIndex];
+  if (!quiz) return;
+  const url = document.getElementById('quiz-redirect-url').value.trim();
+  quiz.redirectUrl = url || 'https://www.google.it';
+  saveToStorage();
+  alert("Link di reindirizzamento salvato con successo!");
 }

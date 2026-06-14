@@ -116,6 +116,16 @@
       <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem; color: var(--color-error);" onclick="deleteActiveQuiz()">ELIMINA</button>
     </div>
 
+    <!-- Quiz Settings Panel -->
+    <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-panel); padding: 1.2rem; border-radius: 8px; text-align: left;">
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.8rem; color: #a78bfa;">Impostazioni Generali Quiz</h3>
+      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <label for="quiz-redirect-url" style="margin-bottom: 0; white-space: nowrap; text-transform: none; font-size: 0.95rem;">URL Reindirizzamento Finale Giocatori:</label>
+        <input type="text" id="quiz-redirect-url" placeholder="es. https://www.google.it" style="flex-grow: 1; min-width: 250px; padding: 0.5rem 1rem; font-size: 0.95rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-panel); border-radius: 8px; color: #fff;">
+        <button class="btn" style="padding: 0.5rem 1.5rem; font-size: 0.9rem; white-space: nowrap;" onclick="saveQuizSettings()">SALVA LINK</button>
+      </div>
+    </div>
+
     <!-- Main Builder Workspace -->
     <div class="question-builder-grid">
       <!-- Sidebar Questions list -->

@@ -43,7 +43,10 @@ function startHostDashboard() {
   }
 
   // Register room on server
-  socket.emit('host-create-room', { questions: currentQuiz.questions });
+  socket.emit('host-create-room', { 
+    questions: currentQuiz.questions,
+    redirectUrl: currentQuiz.redirectUrl || 'https://www.google.it'
+  });
   
   document.getElementById('game-status-logs').textContent = `Creazione stanza in corso per: ${currentQuiz.title}...`;
 }
@@ -352,10 +355,15 @@ socket.on('vote-updated', (data) => {
     const scaleWord = (letter, votes) => {
       const el = document.getElementById('word-' + letter);
       if (el) {
-        const share = totalVotes > 0 ? votes / totalVotes : 0.25;
-        // Font size scales from 1.6rem to 4.5rem
-        const fontSize = 1.6 + (share * 3.2);
-        el.style.fontSize = `${fontSize}rem`;
+        if (totalVotes === 0) {
+          el.style.fontSize = '2.5rem';
+          el.style.opacity = '0.8';
+        } else {
+          const share = votes / totalVotes;
+          const fontSize = 1.2 + (share * 3.8);
+          el.style.fontSize = `${fontSize}rem`;
+          el.style.opacity = votes > 0 ? '1.0' : '0.4';
+        }
       }
     };
 
