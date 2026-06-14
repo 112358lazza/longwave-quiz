@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Multitemer - Controller Giocatore</title>
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Socket.IO library (provided automatically by the Express server) -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body style="padding: 10px;">
+  <div class="glow-sphere glow-1"></div>
+
+  <!-- CONVENTION CUSTOMIZATION AUDIO FILES
+       Replace these relative 'src' paths with your custom sounds.
+       If files are not found, the browser will ignore playback gracefully. -->
+  <audio id="audio-correct" src="/assets/correct.mp3"></audio>
+  <audio id="audio-incorrect" src="/assets/incorrect.mp3"></audio>
+
+  <!-- Player HUD Screen -->
+  <div class="container player-layout" style="max-width: 500px; width: 100%; padding: 1.5rem;">
+    
+    <!-- Top HUD (Player details) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem; margin-bottom: 1rem; width: 100%;">
+      <div style="font-weight: 700; color: #a78bfa;" id="player-hud-name">Giocatore</div>
+      <div style="font-weight: 700; font-size: 0.9rem; opacity: 0.8; display: none;" id="player-hud-score">Punti: 0</div>
+    </div>
+
+    <!-- MAIN INTERACTIVE WRAPPER -->
+    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative;">
+
+      <!-- 1. WAIT LOBBY SCREEN -->
+      <div id="screen-wait-lobby" style="display: block; text-align: center;">
+        <h2 style="font-size: 1.6rem; margin-bottom: 1rem;">Sei in stanza! 🎮</h2>
+        <p>Il tuo nickname è registrato. Guarda il grande schermo e attendi l'avvio della sessione dal presentatore.</p>
+        
+        <!-- Bouncing avatar dot -->
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%); border-radius: 50%; margin: 2rem auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: var(--shadow-neon); animation: bounce 1.5s infinite alternate;">
+          👋
+        </div>
+        
+        <p style="font-size: 0.8rem; color: var(--text-muted);">PIN Stanza: <span id="wait-lobby-pin">------</span></p>
+      </div>
+
+      <!-- 2. ANSWER INPUT SCREEN (Active Buttons) -->
+      <div id="screen-answer-buttons" style="display: none; width: 100%;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 0.5rem; text-align: center;">Scegli la tua risposta</h2>
+        <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;" id="player-timer-hint">Tempo rimasto: --s</div>
+        
+        <!-- 4 Grid Buttons representing A, B, C, D -->
+        <div class="player-buttons-grid">
+          <button class="player-opt-btn opt-a" onclick="submitAnswer('A')">A</button>
+          <button class="player-opt-btn opt-b" onclick="submitAnswer('B')">B</button>
+          <button class="player-opt-btn opt-c" onclick="submitAnswer('C')">C</button>
+          <button class="player-opt-btn opt-d" onclick="submitAnswer('D')">D</button>
+        </div>
+      </div>
+
+      <!-- 3. FEEDBACK OVERLAYS (Shown conditionally over container) -->
+      
+      <!-- Submitted & Waiting state -->
+      <div class="feedback-overlay waiting" id="overlay-waiting" style="display: none;">
+        <div class="feedback-title" style="font-size: 2rem;">Inviata!</div>
+        <p style="color: #fff; margin-bottom: 1.5rem;">Risposta registrata. Attendi gli altri giocatori...</p>
+        <div style="border: 4px solid rgba(255,255,255,0.1); border-top-color: #fff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+      </div>
+
+      <!-- Correct Feedback State -->
+      <div class="feedback-overlay correct" id="overlay-correct" style="display: none;">
+        <div class="feedback-title" style="font-size: 2.2rem;">CORRETTA! 🎉</div>
+        <div class="feedback-points" id="points-earned-display">+0 punti</div>
+      </div>
+
+      <!-- Incorrect Feedback State -->
+      <div class="feedback-overlay incorrect" id="overlay-incorrect" style="display: none;">
+        <div class="feedback-title" style="font-size: 2.2rem;">ERRATA ❌</div>
+        <p style="color: #fff;">Non mollare, concentrati per la prossima!</p>
+      </div>
+
+      <!-- Timeout Feedback State -->
+      <div class="feedback-overlay waiting" id="overlay-timeout" style="display: none; background: rgba(0, 0, 0, 0.85);">
+        <div class="feedback-title" style="font-size: 2.2rem; color: var(--color-error);">TEMPO SCADUTO</div>
+        <p style="color: #fff;">Non hai fatto in tempo a votare.</p>
+      </div>
+
+      <!-- Poll Thanks Feedback State -->
+      <div class="feedback-overlay correct" id="overlay-poll-thanks" style="display: none; background: rgba(129, 140, 248, 0.95);">
+        <div class="feedback-title" style="font-size: 2.2rem;">VOTO REGISTRATO! 👍</div>
+        <p style="color: #fff;">Grazie per la tua preferenza. Guarda il grande schermo!</p>
+      </div>
+
+      <!-- 4. LOBBY INTER-STAGE SCREEN (Shown when Leaderboard is projected) -->
+      <div id="screen-score-break" style="display: none;"></div>
+
+      <!-- 5. GAME OVER FINAL SCREEN -->
+      <div id="screen-gameover" style="display: none; text-align: center;">
+        <h1 style="font-size: 2.2rem; margin-bottom: 1rem;">GIOCO COMPLETATO!</h1>
+        <p style="font-size: 1.2rem;">Grazie per aver partecipato!</p>
+        <div style="margin-top: 2rem;">
+          <a href="index.html" class="btn">ESCI</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Status -->
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.8rem; margin-top: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);" id="connection-status-hint">
+      Connessione in corso...
+    </div>
+
+  </div>
+
+  <style>
+    /* Unique animations for player controller */
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-15px); }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <script src="player.js"></script>
+</body>
+</html>

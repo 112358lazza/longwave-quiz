@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitemer - Quiz Creator</title>
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .question-builder-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+      text-align: left;
+    }
+    
+    .question-list-sidebar {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 1rem;
+      max-height: 550px;
+      overflow-y: auto;
+    }
+
+    .q-item-tab {
+      padding: 0.8rem;
+      background: rgba(255, 255, 255, 0.05);
+      margin-bottom: 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .q-item-tab.active {
+      background: rgba(128, 90, 213, 0.2);
+      border-color: var(--color-primary);
+    }
+
+    .q-item-tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .q-delete-btn {
+      color: var(--color-error);
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .creator-options-box {
+      border: 1px solid var(--border-panel);
+      padding: 1.5rem;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      margin-top: 1rem;
+    }
+
+    .option-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 1rem;
+    }
+
+    .option-input-wrapper input[type="text"] {
+      flex-grow: 1;
+    }
+
+    .correct-radio-label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <div class="container" style="max-width: 1100px; width: 95%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+      <h1 style="margin-bottom: 0; font-size: 2rem;">Multitemer Creator</h1>
+      <a href="index.html" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">ESCI</a>
+    </div>
+
+    <p style="text-align: left; font-size: 0.95rem;">Crea o modifica un quiz personalizzato. Puoi inserire immagini, video o file audio inserendo i rispettivi indirizzi URL (o percorsi relativi locali es. <code>/assets/image.jpg</code>) che verranno proiettati durante la convention.</p>
+
+    <!-- Quiz Selection Selector -->
+    <div style="display: flex; gap: 15px; align-items: center; justify-content: flex-start; margin-top: 1.5rem;">
+      <label style="margin-bottom: 0; font-size: 1rem;" for="quiz-select">Seleziona Quiz:</label>
+      <select id="quiz-select" style="max-width: 300px; padding: 0.5rem;" onchange="loadSelectedQuiz()">
+        <!-- Populated via JS -->
+      </select>
+      <button class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="createNewQuiz()">NUOVO QUIZ</button>
+      <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem; color: var(--color-error);" onclick="deleteActiveQuiz()">ELIMINA</button>
+    </div>
+
+    <!-- Main Builder Workspace -->
+    <div class="question-builder-grid">
+      <!-- Sidebar Questions list -->
+      <div class="question-list-sidebar">
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Domande</h3>
+        <div id="questions-list-container">
+          <!-- Populated dynamically -->
+        </div>
+        <button class="btn btn-secondary" style="width: 100%; font-size: 0.85rem; padding: 0.6rem; margin-top: 1rem;" onclick="addNewQuestion()">+ AGGIUNGI DOMANDA</button>
+      </div>
+
+      <!-- Active Question Editor Form -->
+      <div class="container" style="padding: 1.5rem; text-align: left; background: rgba(0,0,0,0.15); box-shadow: none;">
+        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: #a78bfa;" id="editor-title">Modifica Domanda 1</h3>
+        
+        <form id="question-form" onsubmit="saveActiveQuestion(event)">
+          <div class="form-group">
+            <label for="q-text">Testo della Domanda</label>
+            <input type="text" id="q-text" placeholder="Scrivi la tua domanda qui..." required>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="q-timer">Tempo limite (secondi)</label>
+              <input type="number" id="q-timer" min="5" max="300" required value="20">
+            </div>
+            
+            <div class="form-group">
+              <label for="q-media-type">Tipo di Media (Convention Hook)</label>
+              <select id="q-media-type" onchange="toggleMediaInput()">
+                <option value="none">Nessuno</option>
+                <option value="image">Immagine</option>
+                <option value="video">Video (MP4 o YouTube)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="media-url-group" style="display: none;">
+            <label for="q-media-url">URL / Percorso Media</label>
+            <input type="text" id="q-media-url" placeholder="es. /assets/domanda1.mp4 o URL di un'immagine online">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 0;">Puoi inserire percorsi relativi di file salvati nella cartella <code>public/assets/</code>.</p>
+          </div>
+
+          <div class="creator-options-box">
+            <label>Opzioni di Risposta (spunta la risposta corretta)</label>
+            
+            <!-- Option A -->
+            <div class="option-input-wrapper">
+              <span class="correct-radio-label">
+                <input type="radio" name="correct-opt" value="0" checked id="correct-a">
+                <label for="correct-a" style="margin-bottom: 0; color: var(--color-opt-a)">A</label>
+              </span>
+              <input type="text" id="opt-a-text" placeholder="Risposta A" required value="Opzione A">
+            </div>
+
+            <!-- Option B -->
+            <div class="option-input-wrapper">
+              <span class="correct-radio-label">
+                <input type="radio" name="correct-opt" value="1" id="correct-b">
+                <label for="correct-b" style="margin-bottom: 0; color: var(--color-opt-b)">B</label>
+              </span>
+              <input type="text" id="opt-b-text" placeholder="Risposta B" required value="Opzione B">
+            </div>
+
+            <!-- Option C -->
+            <div class="option-input-wrapper">
+              <span class="correct-radio-label">
+                <input type="radio" name="correct-opt" value="2" id="correct-c">
+                <label for="correct-c" style="margin-bottom: 0; color: var(--color-opt-c)">C</label>
+              </span>
+              <input type="text" id="opt-c-text" placeholder="Risposta C (lascia vuoto per disabilitare)" value="Opzione C">
+            </div>
+
+            <!-- Option D -->
+            <div class="option-input-wrapper">
+              <span class="correct-radio-label">
+                <input type="radio" name="correct-opt" value="3" id="correct-d">
+                <label for="correct-d" style="margin-bottom: 0; color: var(--color-opt-d)">D</label>
+              </span>
+              <input type="text" id="opt-d-text" placeholder="Risposta D (lascia vuoto per disabilitare)" value="Opzione D">
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; text-align: right;">
+            <button type="submit" class="btn">SALVA DOMANDA</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Final Save/Export options -->
+    <div style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; display: flex; justify-content: flex-end; gap: 15px;">
+      <button class="btn btn-secondary" onclick="exportJSON()">ESPORTA FILE JSON</button>
+      <button class="btn" onclick="startHostWithThisQuiz()">AVVIA PRESENTAZIONE CON QUESTO QUIZ</button>
+    </div>
+  </div>
+
+  <script src="creator.js"></script>
+  <img src="assets/logo.png" alt="Longwave Logo" class="bottom-logo">
+</body>
+</html>

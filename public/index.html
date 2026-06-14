@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitemer - Real-Time Interactivity Engine</title>
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <!-- CONVENTION CUSTOMIZATION: You can replace this src with your own background video or image -->
+  <!-- <video class="custom-bg-media" autoplay muted loop src="/assets/your_bg_video.mp4"></video> -->
+
+  <div class="container" style="max-width: 600px;">
+    <h1>MULTITEMER</h1>
+    <p>Il motore per quiz e sondaggi in tempo reale per la tua convention. Gestisci le votazioni del pubblico all'istante.</p>
+
+    <!-- Role Selection Cards -->
+    <div class="role-select">
+      <div class="role-card" onclick="selectRole('player')">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #a78bfa;">Giocatore</h2>
+        <p style="font-size: 0.85rem; margin-bottom: 0;">Entra nella stanza, rispondi alle domande dal tuo smartphone.</p>
+      </div>
+
+      <div class="role-card" onclick="selectRole('host')">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #818cf8;">Presentatore</h2>
+        <p style="font-size: 0.85rem; margin-bottom: 0;">Avvia un quiz sul grande schermo e mostra i risultati in tempo reale.</p>
+      </div>
+    </div>
+
+    <!-- Join Room form (shows dynamically if player is selected) -->
+    <div id="player-form-container" style="display: none; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+      <h2 style="font-size: 1.4rem;">Accedi alla sessione</h2>
+      <form id="join-form">
+        <div class="form-group">
+          <label for="room-pin">Game PIN (6 cifre)</label>
+          <input type="text" id="room-pin" placeholder="Inserisci PIN stanza" maxlength="6" required style="text-align: center; font-size: 1.5rem; letter-spacing: 0.1em;">
+        </div>
+        <div class="form-group">
+          <label for="nickname">Tuo Nickname</label>
+          <input type="text" id="nickname" placeholder="Come ti chiami?" maxlength="15" required style="text-align: center;">
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">ENTRA IN GIOCO</button>
+      </form>
+      <div id="join-error-msg" style="color: var(--color-error); margin-top: 1rem; font-weight: 700; display: none;"></div>
+    </div>
+
+    <!-- Creator Quick Link -->
+    <div style="margin-top: 2.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+      <p style="font-size: 0.9rem; margin-bottom: 0.8rem;">Vuoi creare o modificare le domande?</p>
+      <a href="creator.html" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.6rem 1.5rem;">VAI AL CREATOR</a>
+    </div>
+  </div>
+
+  <script>
+    // Quick routing selection
+    function selectRole(role) {
+      if (role === 'host') {
+        window.location.href = 'presenter.html';
+      } else if (role === 'player') {
+        const form = document.getElementById('player-form-container');
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Check if PIN is in query parameter (e.g. from Presenter QR Code)
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const pinParam = urlParams.get('pin');
+      if (pinParam) {
+        selectRole('player');
+        document.getElementById('room-pin').value = pinParam;
+        document.getElementById('nickname').focus();
+      }
+    });
+
+    // Submit join form (redirects to player.html with query params)
+    document.getElementById('join-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pin = document.getElementById('room-pin').value.trim();
+      const nick = document.getElementById('nickname').value.trim();
+      
+      if (pin.length !== 6 || isNaN(pin)) {
+        showError('Il PIN deve essere composto da 6 numeri.');
+        return;
+      }
+
+      if (!nick) {
+        showError('Inserisci un nickname.');
+        return;
+      }
+
+      // Redirect to player view carrying credentials in the URL parameter
+      window.location.href = `player.html?pin=${pin}&nick=${encodeURIComponent(nick)}`;
+    });
+
+    function showError(msg) {
+      const err = document.getElementById('join-error-msg');
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+  </script>
+  <img src="assets/logo.png" alt="Longwave Logo" class="bottom-logo">
+</body>
+</html>

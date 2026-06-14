@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitemer - Presenter Dashboard</title>
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Socket.IO library (provided automatically by the Express server) -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="glow-sphere glow-1"></div>
+  <div class="glow-sphere glow-2"></div>
+
+  <!-- Browser Audio Autoplay Permission Request Overlay -->
+  <div id="interaction-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070414; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999;">
+    <h1 style="font-size: 2.2rem; margin-bottom: 2rem;">Multitemer Presenter Dashboard</h1>
+    <button class="btn" onclick="startHostDashboard()" style="padding: 1.5rem 3rem; font-size: 1.3rem;">INIZIA PRESENTAZIONE</button>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">Clicca qui per consentire la riproduzione automatica di musica e suoni.</p>
+  </div>
+
+  <!-- CONVENTION CUSTOMIZATION AUDIO FILES
+       Replace these relative 'src' paths with your custom convention audio assets.
+       If files are not found, the game will ignore playback gracefully. -->
+  <audio id="audio-lobby" loop src="/assets/lobby_music.mp3"></audio>
+  <audio id="audio-tick" src="/assets/tick.mp3"></audio>
+  <audio id="audio-buzzer" src="/assets/buzzer.mp3"></audio>
+  <audio id="audio-reveal" src="/assets/reveal.mp3"></audio>
+  <audio id="audio-victory" src="/assets/victory.mp3"></audio>
+
+  <!-- Floating QR Code in Top Right -->
+  <div id="qr-badge" class="fixed-qr" style="display: none;">
+    <p>INQUADRA PER GIOCARE</p>
+    <img id="qr-code-img" src="" alt="QR Code" style="width: 120px; height: 120px;">
+    <p id="qr-pin-display" style="margin-top:5px; margin-bottom:0; font-weight:bold; font-size: 1rem;">PIN: ------</p>
+  </div>
+
+  <!-- Main HUD Container -->
+  <div class="container" style="max-width: 1000px; width: 95%; min-height: 80vh; display: flex; flex-direction: column; justify-content: space-between;">
+    
+    <!-- Top Stats Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <div id="room-pin-header" style="font-size: 1.2rem; font-weight: 700;">PIN Stanza: <span style="color: #a78bfa;" id="pin-header-val">------</span></div>
+      <div style="font-size: 1.2rem; font-weight: 700;"><span id="players-count-val">0</span> Giocatori</div>
+    </div>
+
+    <!-- MAIN VIEWPORTS -->
+    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+
+      <!-- 1. LOBBY VIEW -->
+      <div id="view-lobby" style="display: block;">
+        <h2 style="font-size: 2rem;">In attesa dei partecipanti...</h2>
+        <p style="font-size: 1.1rem;">Vai su <strong style="color: #818cf8;">http://<span id="ip-address-display">localhost</span>:3000</strong> dal tuo dispositivo ed entra con il PIN:</p>
+        <div class="pin-display" id="lobby-pin-display">------</div>
+        
+        <div class="player-grid" id="lobby-players-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div style="margin-top: 3rem;">
+          <button class="btn" id="start-game-btn" onclick="emitStartGame()" style="padding: 1.2rem 2.5rem; font-size: 1.2rem;" disabled>AVVIA GIOCO</button>
+        </div>
+      </div>
+
+      <!-- 2. QUESTION & REAL-TIME VOTING VIEW -->
+      <div id="view-question" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+          <div style="text-align: left;">
+            <div style="font-weight: 700; color: #a78bfa; text-transform: uppercase; font-size: 0.9rem;" id="q-counter">Domanda 1 di 5</div>
+            <h2 id="question-text" style="font-size: 1.8rem; margin-bottom: 0.5rem; text-align: left;">Testo della domanda?</h2>
+          </div>
+          
+          <!-- Circular Countdown Timer -->
+          <div class="timer-container" id="question-timer-hud">
+            <svg class="timer-svg">
+              <circle class="timer-bg" cx="50" cy="50" r="45"/>
+              <circle class="timer-bar" id="timer-bar-svg" cx="50" cy="50" r="45"/>
+            </svg>
+            <div class="timer-text" id="timer-text-val">20</div>
+          </div>
+        </div>
+
+        <!-- Convention Media Integration Area (Images/Video question cards) -->
+        <div class="media-container" id="question-media-box" style="display: none;">
+          <!-- Loaded dynamically via JS -->
+        </div>
+
+        <div id="votes-chart" style="display: none; align-items: flex-end; justify-content: space-around; width: 100%; height: 260px; margin-top: 1.5rem; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.2);">
+          <div class="chart-bar-wrapper" id="bar-wrapper-A">
+            <div class="chart-bar opt-a" id="bar-A" style="height: 10px;"><span class="chart-bar-value" id="val-A">0</span></div>
+            <div class="chart-label opt-a">A</div>
+          </div>
+          <div class="chart-bar-wrapper" id="bar-wrapper-B">
+            <div class="chart-bar opt-b" id="bar-B" style="height: 10px;"><span class="chart-bar-value" id="val-B">0</span></div>
+            <div class="chart-label opt-b">B</div>
+          </div>
+          <div class="chart-bar-wrapper" id="bar-wrapper-C">
+            <div class="chart-bar opt-c" id="bar-C" style="height: 10px;"><span class="chart-bar-value" id="val-C">0</span></div>
+            <div class="chart-label opt-c">C</div>
+          </div>
+          <div class="chart-bar-wrapper" id="bar-wrapper-D">
+            <div class="chart-bar opt-d" id="bar-D" style="height: 10px;"><span class="chart-bar-value" id="val-D">0</span></div>
+            <div class="chart-label opt-d">D</div>
+          </div>
+        </div>
+
+        <!-- Coca-Cola Custom Glass Visualization (Convention Dynamic Special) -->
+        <div id="cola-glass-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 260px; margin-top: 1.5rem; padding-bottom: 15px;">
+          <!-- SI Glass -->
+          <div class="cola-glass-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="cola-glass">
+              <div class="cola-liquid" id="cola-liquid-A">
+                <div class="cola-foam"></div>
+              </div>
+            </div>
+            <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">SI</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="cola-val-A">0 voti (0%)</div>
+          </div>
+
+          <!-- NO Glass -->
+          <div class="cola-glass-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="cola-glass">
+              <div class="cola-glass-rim"></div>
+              <div class="cola-liquid" id="cola-liquid-B">
+                <div class="cola-foam"></div>
+              </div>
+            </div>
+            <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">NO</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="cola-val-B">0 voti (0%)</div>
+          </div>
+        </div>
+
+        <!-- Stretching Silhouettes Visualization (Question 2) -->
+        <div id="silhouettes-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 260px; margin-top: 1.5rem; padding-bottom: 15px;">
+          <!-- SI Silhouette -->
+          <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="silhouette-container">
+              <div class="silhouette-body" id="silhouette-body-A"></div>
+            </div>
+            <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">VERO</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="silhouette-val-A">0 voti</div>
+          </div>
+
+          <!-- NO Silhouette -->
+          <div class="silhouette-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="silhouette-container">
+              <div class="silhouette-body" id="silhouette-body-B"></div>
+            </div>
+            <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">FALSO</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="silhouette-val-B">0 voti</div>
+          </div>
+        </div>
+
+        <!-- Fish Bowl Visualization (Question 3) -->
+        <div id="fishbowls-visualization" style="display: none; justify-content: space-around; width: 100%; align-items: flex-end; height: 260px; margin-top: 1.5rem; padding-bottom: 15px;">
+          <!-- SI Bowl -->
+          <div class="fishbowl-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="fishbowl">
+              <div class="fishbowl-water" id="fishbowl-water-A"></div>
+            </div>
+            <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">SÌ</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="fishbowl-val-A">0 pesci</div>
+          </div>
+
+          <!-- NO Bowl -->
+          <div class="fishbowl-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+            <div class="fishbowl">
+              <div class="fishbowl-water" id="fishbowl-water-B"></div>
+            </div>
+            <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">NO</div>
+            <div style="font-weight: 800; margin-top: 5px; font-size: 1.1rem;" id="fishbowl-val-B">0 pesci</div>
+          </div>
+        </div>
+
+        <!-- Word Cloud Visualization (Question 9) -->
+        <div id="wordcloud-visualization" style="display: none; justify-content: center; align-items: center; flex-wrap: wrap; gap: 2rem; min-height: 200px; max-height: 260px; width: 100%; margin-top: 1.5rem; padding: 10px;">
+          <div class="cloud-word" id="word-A">Coraggio</div>
+          <div class="cloud-word" id="word-B">Curiosità</div>
+          <div class="cloud-word" id="word-C">Fiducia</div>
+          <div class="cloud-word" id="word-D">Collaborazione</div>
+        </div>
+
+        <!-- Answers count status -->
+        <div style="margin-top: 1rem; font-size: 1.1rem; font-weight: 600; color: var(--text-muted);">
+          Risposte ricevute: <span id="answers-submitted-count" style="color: #fff;">0</span> / <span id="answers-total-players">0</span>
+        </div>
+
+        <!-- Question Preview Options (Host Screen Labels) -->
+        <div class="presenter-options-grid" id="presenter-preview-options">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- 3. SCOREBOARD / LEADERBOARD VIEW -->
+      <div id="view-leaderboard" style="display: none;"></div>
+
+      <!-- 4. GAME OVER VIEW -->
+      <div id="view-gameover" style="display: none; text-align: center; margin-top: 5rem;">
+        <h1 style="font-size: 3rem;">GIOCO COMPLETATO!</h1>
+        <h2 style="color: #818cf8; margin-top: 1rem;">Grazie per aver partecipato.</h2>
+        
+        <div class="leaderboard-list" id="final-standings-container" style="display: none;">
+          <!-- Empty -->
+        </div>
+
+        <div style="margin-top: 2rem;">
+          <a href="index.html" class="btn" style="padding: 1rem 2rem;">TORNA AL MENU</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Controls (Only visible to host, styled subtly) -->
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div id="game-status-logs" style="font-size: 0.85rem; color: var(--text-muted);">In attesa di iniziare...</div>
+      <button class="btn" id="next-step-btn" onclick="emitNextStep()" style="display: none; padding: 0.6rem 1.5rem; font-size: 0.95rem;">AVANTI</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="presenter.js"></script>
+
+    <img src="assets/logo.png" alt="Longwave Logo" class="bottom-logo">
+</body>
+</html>

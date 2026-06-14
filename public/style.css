@@ -1,0 +1,860 @@
+/* ==========================================================================
+   MULTITEMER - PREMIUM STYLING SYSTEM
+   Feel free to override these variables, add background images/videos,
+   or customize sound assets directly in the files.
+   ========================================================================== */
+
+:root {
+  /* Core Palette (Edit these for your convention branding) */
+  --bg-gradient: radial-gradient(circle at 50% 50%, #1a103c 0%, #070414 100%);
+  --bg-panel: rgba(255, 255, 255, 0.04);
+  --border-panel: rgba(255, 255, 255, 0.08);
+  --text-main: #ffffff;
+  --text-muted: #a0aec0;
+  
+  /* Accent/Action Colors */
+  --color-primary: #805ad5;     /* Purple */
+  --color-primary-hover: #9f7aea;
+  --color-success: #48bb78;     /* Green */
+  --color-error: #f56565;       /* Red */
+  
+  /* Question Options Colors (Mentimeter / Kahoot Style) */
+  --color-opt-a: #e53e3e;       /* Red / Orange-Red */
+  --color-opt-b: #3182ce;       /* Blue */
+  --color-opt-c: #38a169;       /* Green */
+  --color-opt-d: #dd6b20;       /* Orange / Yellow-Orange */
+  
+  /* Fonts */
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Shadows and Blurs */
+  --blur-amount: 16px;
+  --shadow-neon: 0 0 20px rgba(128, 90, 213, 0.3);
+  --shadow-panel: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --border-radius: 16px;
+}
+
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background: url('assets/bg.png') no-repeat center center fixed;
+  background-size: cover;
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Background Glowing Elements (For atmosphere) */
+.glow-sphere {
+  display: none;
+}
+.glow-1 { top: -100px; left: -100px; }
+.glow-2 { bottom: -100px; right: -100px; }
+
+/* Custom Background Video / Image Holder (Convention Customization) */
+.custom-bg-media {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.15; /* Set to 1.0 or adjust for full visual visibility */
+  pointer-events: none;
+}
+
+/* Base Layout Container (Glassmorphic) */
+.container {
+  width: 90%;
+  max-width: 900px;
+  background: var(--bg-panel);
+  backdrop-filter: blur(var(--blur-amount));
+  -webkit-backdrop-filter: blur(var(--blur-amount));
+  border: 1px solid var(--border-panel);
+  border-radius: var(--border-radius);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-panel);
+  z-index: 1;
+  text-align: center;
+  position: relative;
+}
+
+/* Typography */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+p {
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.2);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-neon);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+/* Grid layout for Roles */
+.role-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.role-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-panel);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  cursor: pointer;
+  transition: transform 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.role-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Lobby View */
+.pin-display {
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #fff;
+  margin: 1.5rem 0;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.player-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Base UI Helper Classes */
+.hidden { display: none !important; }
+.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* Fixed Layout Elements */
+.bottom-logo {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: 250px;
+  pointer-events: none;
+}
+
+.fixed-qr {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #000;
+  font-weight: 700;
+}
+.fixed-qr p {
+  margin: 0 0 5px 0;
+  font-size: 0.8rem;
+  color: #333;
+}
+.fixed-qr #qr-container {
+  width: 120px;
+  height: 120px;
+}
+
+/* Presenter layout with sidebar or split grid */
+.presenter-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Circular Timer */
+.timer-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto;
+}
+
+.timer-svg {
+  width: 100px;
+  height: 100px;
+  transform: rotate(-90deg);
+}
+
+.timer-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 8;
+}
+
+.timer-bar {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 8;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+  stroke-linecap: round;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+/* Question Media Box */
+.media-container {
+  width: 100%;
+  max-height: 260px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 1rem 0;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.media-container img, .media-container video {
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+/* Host Charts (Live voting results) */
+.chart-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 250px;
+  margin-top: 2rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.chart-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20%;
+}
+
+.chart-bar {
+  width: 100%;
+  min-height: 10px;
+  background: var(--color-primary);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.chart-bar-value {
+  position: absolute;
+  top: -30px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.chart-bar.correct {
+  box-shadow: 0 0 15px var(--color-success);
+  border: 2px solid #fff;
+}
+
+.chart-label {
+  margin-top: 10px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 4px;
+}
+
+/* Color classes for chart options */
+.opt-a { background-color: var(--color-opt-a) !important; color: #fff; }
+.opt-b { background-color: var(--color-opt-b) !important; color: #fff; }
+.opt-c { background-color: var(--color-opt-c) !important; color: #fff; }
+.opt-d { background-color: var(--color-opt-d) !important; color: #fff; }
+
+/* Presenter/Host Grid for Options (Preview) */
+.presenter-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.presenter-opt-card {
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: opacity 0.3s;
+}
+
+.presenter-opt-letter {
+  background: rgba(0, 0, 0, 0.2);
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+/* Player UI Layout (Mobile-first) */
+.player-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  justify-content: space-between;
+}
+
+/* Big Grid Options for Mobile Controller */
+.player-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1rem;
+  flex-grow: 1;
+  margin-top: 1.5rem;
+}
+
+.player-opt-btn {
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 3rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, opacity 0.3s, box-shadow 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.player-opt-btn:active {
+  transform: scale(0.94);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.player-opt-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Feedback Overlay */
+.feedback-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: #fff;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.feedback-overlay.correct {
+  background: rgba(72, 187, 120, 0.95);
+}
+
+.feedback-overlay.incorrect {
+  background: rgba(245, 101, 101, 0.95);
+}
+
+.feedback-overlay.waiting {
+  background: rgba(26, 16, 60, 0.95);
+}
+
+.feedback-title {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.feedback-points {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Leaderboard List */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 2rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.leaderboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  transition: transform 0.5s ease;
+}
+
+.leaderboard-row.rank-1 {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.2) 0%, rgba(255,255,255,0.05) 100%);
+  border-color: #d97706;
+}
+
+.leaderboard-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leaderboard-score {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #a78bfa;
+}
+
+/* Animations */
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+/* Responsive Overrides */
+@media (max-width: 600px) {
+  .container {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  .role-select {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   CUSTOM COCA-COLA GLASS VISUALIZATION
+   ========================================================================== */
+
+.cola-glass {
+  position: relative;
+  width: 130px;
+  height: 200px;
+  border-left: 6px solid rgba(255, 255, 255, 0.45);
+  border-right: 6px solid rgba(255, 255, 255, 0.45);
+  border-bottom: 12px solid rgba(255, 255, 255, 0.6);
+  border-radius: 0 0 25px 25px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.15));
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end; /* Liquid rises from the bottom */
+  transform: perspective(300px) rotateX(-5deg); /* Taper 3D glass shape */
+}
+
+/* Glass reflections */
+.cola-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15px;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.0));
+  pointer-events: none;
+}
+
+.cola-liquid {
+  width: 100%;
+  height: 0%; /* Transitions dynamically */
+  background: linear-gradient(90deg, #180a02 0%, #2f1201 50%, #180a02 100%);
+  position: relative;
+  transition: height 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: inset 0 8px 10px rgba(0, 0, 0, 0.7);
+}
+
+.cola-foam {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background: #fcf6e7; /* Creamy white soda foam */
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 -3px 8px rgba(252, 246, 231, 0.6);
+  border-bottom: 2px solid #e1cca2;
+}
+
+.cola-bubble {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  background: rgba(244, 164, 96, 0.55); /* Caramel-colored carbonation bubble */
+  border-radius: 50%;
+  animation: riseBubble 2.2s infinite linear;
+}
+
+@keyframes riseBubble {
+  0% {
+    bottom: -5px;
+    transform: translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    bottom: 96%;
+    transform: translateX(var(--drift)) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   CUSTOM STRETCHING SILHOUETTES
+   ========================================================================== */
+
+.silhouette-container {
+  position: relative;
+  width: 120px;
+  height: 200px;
+  border-bottom: 4px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+}
+
+.silhouette-body {
+  width: 35px;
+  height: 90px; /* Scaled dynamically in JS */
+  background: var(--color-primary);
+  border-radius: 15px 15px 0 0;
+  position: relative;
+  transition: height 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Head */
+.silhouette-body::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  background: inherit;
+  border-radius: 50%;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+}
+
+/* Limbs / Arms styling */
+.silhouette-body::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: -6px;
+  width: 47px;
+  height: 12px;
+  background: inherit;
+  border-radius: 10px;
+  opacity: 0.85;
+}
+
+#silhouette-body-A {
+  background: linear-gradient(to top, var(--color-opt-a), #f87171);
+}
+
+#silhouette-body-B {
+  background: linear-gradient(to top, var(--color-opt-b), #60a5fa);
+}
+
+/* ==========================================================================
+   CUSTOM FISHBOWLS
+   ========================================================================== */
+
+.fishbowl {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  transform: perspective(300px);
+}
+
+/* Bowl opening rim */
+.fishbowl::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 30px;
+  width: 80px;
+  height: 10px;
+  background: #110931; /* Blends with dark body background */
+  border-bottom: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0 0 10px 10px;
+  z-index: 2;
+}
+
+.fishbowl-water {
+  width: 100%;
+  height: 80%; /* Fills 80% with water */
+  background: linear-gradient(to top, rgba(30, 144, 255, 0.35) 0%, rgba(135, 206, 250, 0.15) 100%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 8px 12px rgba(0,0,0,0.3);
+}
+
+.little-fish {
+  position: absolute;
+  width: 16px;
+  height: 9px;
+  background: linear-gradient(135deg, #ff7f50, #ff4500); /* Goldfish orange */
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  animation: swimFish 3.5s infinite ease-in-out alternate;
+}
+
+/* Goldfish tail */
+.little-fish::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 1px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #ff4500;
+}
+
+@keyframes swimFish {
+  0% {
+    transform: translate(0, 0) scaleX(1);
+  }
+  100% {
+    transform: translate(20px, 4px) scaleX(-1);
+  }
+}
+
+/* ==========================================================================
+   CUSTOM WORD CLOUD POLL
+   ========================================================================== */
+
+.cloud-word {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  transition: font-size 0.6s cubic-bezier(0.19, 1, 0.22, 1), transform 0.2s;
+  text-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  cursor: default;
+  display: inline-block;
+}
+
+.cloud-word:hover {
+  transform: scale(1.08) rotate(2deg);
+}
+
+/* ==========================================================================
+   FLOATING QR BADGE (Presenter Top-Right Corner)
+   ========================================================================== */
+
+.qr-badge-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.qr-badge-image {
+  width: 90px;
+  height: 90px;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.qr-badge-text {
+  font-size: 0.65rem;
+  font-weight: 800;
+  margin-top: 6px;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
