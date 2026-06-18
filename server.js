@@ -486,7 +486,7 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`=== MULTITEMER SERVER RUNNING ON PORT ${PORT} ===`);
+  console.log(`=== CONNECT UP SERVER RUNNING ON PORT ${PORT} ===`);
   console.log(`Local Access: http://localhost:${PORT}`);
   console.log(`To play, connect devices to the same network and navigate to http://YOUR_IP:${PORT}`);
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multitemer - Proiezione Maxi Schermo</title>
+  <title>CONNECT UP - Proiezione Maxi Schermo</title>
   <!-- Google Fonts Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
       <h2 style="font-size: 3rem; margin-bottom: 2rem; font-weight: 800;">In attesa dei partecipanti...</h2>
       <p style="font-size: 1.5rem; color: var(--text-muted);">Inquadra il codice QR in alto a destra con il telefono per entrare in stanza!</p>
       
-      <div class="player-grid" id="lobby-players-grid" style="max-height: 350px; margin-top: 3rem;">
+      <div class="player-grid" id="lobby-players-grid" style="display: none;">
         <!-- Populated dynamically via JS -->
       </div>
       
@@ -109,7 +109,7 @@
               <div class="silhouette-leg right"></div>
             </div>
           </div>
-          <div class="chart-label opt-a" style="margin-top: 15px; width: 80px; text-align: center;">VERO</div>
+          <div class="chart-label opt-a" style="margin-top: 55px; width: 80px; text-align: center;">VERO</div>
           <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-A">0 voti</div>
         </div>
 
@@ -123,7 +123,7 @@
               <div class="silhouette-leg right"></div>
             </div>
           </div>
-          <div class="chart-label opt-b" style="margin-top: 15px; width: 80px; text-align: center;">FALSO</div>
+          <div class="chart-label opt-b" style="margin-top: 55px; width: 80px; text-align: center;">FALSO</div>
           <div style="font-weight: 800; margin-top: 5px; font-size: 1.2rem;" id="silhouette-val-B">0 voti</div>
         </div>
       </div>
@@ -158,7 +158,7 @@
       </div>
 
       <!-- Votes count status -->
-      <div style="margin-top: 2.5rem; font-size: 1.3rem; font-weight: 600; color: var(--text-muted); text-align: center;">
+      <div style="position: fixed; bottom: 30px; right: 40px; font-size: 1rem; font-weight: 700; color: var(--text-muted); z-index: 100;">
         Risposte ricevute: <span id="answers-submitted-count" style="color: #fff;">0</span> / <span id="answers-total-players">0</span>
       </div>
     </div>
