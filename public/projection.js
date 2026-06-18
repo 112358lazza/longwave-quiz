@@ -23,12 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
 // Setup dynamic QR badge on projection view
 function setupQRBadge(code) {
   const joinUrl = `${window.location.protocol}//${window.location.host}/index.html?pin=${code}`;
-  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}&color=0-0-0&bgcolor=255-255-255`;
+  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(joinUrl)}&color=0-0-0&bgcolor=255-255-255`;
   
   const qrImg = document.getElementById('qr-code-img');
   if (qrImg) {
     qrImg.src = qrCodeApiUrl;
-    document.getElementById('qr-badge').style.display = 'flex';
+  }
+
+  const lobbyQrImg = document.getElementById('lobby-qr-img');
+  if (lobbyQrImg) {
+    lobbyQrImg.src = qrCodeApiUrl;
   }
 }
 
@@ -468,6 +472,16 @@ function showView(viewId) {
     const el = document.getElementById(v);
     if (el) el.style.display = (v === viewId) ? 'block' : 'none';
   });
+
+  // Toggle floating top-right QR badge based on the active view
+  const qrBadge = document.getElementById('qr-badge');
+  if (qrBadge) {
+    if (viewId === 'view-lobby') {
+      qrBadge.style.display = 'none';
+    } else {
+      qrBadge.style.display = 'flex';
+    }
+  }
 }
 
 // Helper to generate dynamic cola bubbles rising
