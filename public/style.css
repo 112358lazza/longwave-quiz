@@ -700,10 +700,24 @@ input:focus, select:focus, textarea:focus {
   height: 200px;
   border-bottom: 4px solid rgba(255, 255, 255, 0.25);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   padding-bottom: 5px;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}
+
+.silhouette-head {
+  width: 26px; /* Width matching the custom head aspect ratio (26/60 ≈ 0.43) */
+  height: 26px;
+  margin-bottom: 8px; /* 8px gap above the body */
+  mask-image: url('assets/persona_head.svg');
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url('assets/persona_head.svg');
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .silhouette-body {
@@ -720,67 +734,50 @@ input:focus, select:focus, textarea:focus {
   -webkit-mask-repeat: no-repeat;
 }
 
-/* Head */
-.silhouette-body::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 8px); /* 8px gap above the body */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 26px; /* Width matching the custom head aspect ratio (26/60 ≈ 0.43) */
-  height: 26px;
-  mask-image: url('assets/persona_head.svg');
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-  -webkit-mask-image: url('assets/persona_head.svg');
-  -webkit-mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-}
-
 /* Hide legacy DOM parts since they are part of the new SVG body mask */
 .silhouette-arm,
 .silhouette-leg {
   display: none !important;
 }
 
+#silhouette-head-A {
+  background: #f87171;
+}
 #silhouette-body-A {
   background: linear-gradient(to top, var(--color-opt-a), #f87171);
 }
-#silhouette-body-A::before {
-  background: #f87171;
-}
 
+#silhouette-head-B {
+  background: #60a5fa;
+}
 #silhouette-body-B {
   background: linear-gradient(to top, var(--color-opt-b), #60a5fa);
-}
-#silhouette-body-B::before {
-  background: #60a5fa;
 }
 
 /* Lobby QR Code Centered Card */
 .lobby-qr-card-container {
-  margin: 2rem auto;
+  margin: 1rem auto; /* Reduced from 2rem to 1rem to raise content */
   display: flex;
   justify-content: center;
 }
 
 .lobby-qr-card {
   background: white;
-  padding: 24px;
-  border-radius: 24px;
+  padding: 20px;
+  border-radius: 20px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  width: 380px;
+  width: 330px; /* Shrunk from 380px to prevent overlapping */
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.1);
   animation: popIn 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
 .lobby-qr-card p {
-  margin: 0 0 16px 0;
-  font-size: 1.4rem;
+  margin: 0 0 12px 0;
+  font-size: 1.25rem;
   font-weight: 900;
   color: #111827;
   letter-spacing: 1px;
@@ -789,8 +786,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .lobby-qr-card img {
-  width: 320px;
-  height: 320px;
+  width: 280px; /* Shrunk from 320px */
+  height: 280px; /* Shrunk from 320px */
   border-radius: 12px;
   display: block;
 }
@@ -802,16 +799,16 @@ input:focus, select:focus, textarea:focus {
 
 .fishbowl {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 200px; /* Increased from 140px */
+  height: 200px; /* Increased from 140px */
   border-radius: 50%;
-  border: 5px solid rgba(255, 255, 255, 0.4);
+  border: 6px solid rgba(255, 255, 255, 0.4);
   background: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
   overflow: hidden;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: flex-end;
-  transform: perspective(300px);
+  transform: perspective(400px);
 }
 
 /* Bowl opening rim */
@@ -819,12 +816,12 @@ input:focus, select:focus, textarea:focus {
   content: '';
   position: absolute;
   top: 0;
-  left: 30px;
-  width: 80px;
-  height: 10px;
+  left: 45px; /* Center-aligned for 200px width: (200 - 110) / 2 = 45px */
+  width: 110px; /* Increased from 80px */
+  height: 12px; /* Increased from 10px */
   background: #110931; /* Blends with dark body background */
   border-bottom: 3px solid rgba(255, 255, 255, 0.4);
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 12px 12px;
   z-index: 2;
 }
 

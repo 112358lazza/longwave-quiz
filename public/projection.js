@@ -204,7 +204,14 @@ function renderQuestion(data) {
     document.getElementById('silhouette-val-B').textContent = '0 voti';
 
     const bodies = document.querySelectorAll('.silhouette-body');
-    bodies.forEach(b => b.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)');
+    bodies.forEach(b => {
+      b.style.boxShadow = 'none';
+      b.style.filter = 'none';
+    });
+    const heads = document.querySelectorAll('.silhouette-head');
+    heads.forEach(h => {
+      h.style.filter = 'none';
+    });
     const wrappers = document.querySelectorAll('.silhouette-wrapper');
     wrappers.forEach(w => w.style.opacity = '1.0');
 
@@ -248,9 +255,18 @@ function renderQuestion(data) {
       if (bar) {
         bar.style.height = '10px';
         bar.classList.remove('correct');
+        bar.style.boxShadow = 'none';
       }
       const valText = document.getElementById(`val-${letter}`);
       if (valText) valText.textContent = '0';
+      const wrapper = document.getElementById(`bar-wrapper-${letter}`);
+      if (wrapper) {
+        wrapper.style.opacity = '1.0';
+        const label = wrapper.querySelector('.chart-label');
+        if (label) {
+          label.textContent = label.textContent.replace(' ✓', '');
+        }
+      }
     });
   }
 
@@ -373,10 +389,46 @@ socket.on('question-ended', (data) => {
 function revealAnswer(data) {
   const { correctOption, correctIndex, votes } = data;
 
-  // Highlight correct bar in chart
-  const correctBar = document.getElementById(`bar-${correctOption}`);
-  if (correctBar) {
-    correctBar.classList.add('correct');
+  let highlightOption = correctOption;
+  if (correctIndex === -1 && votes) {
+    let maxVotes = -1;
+    let winner = '';
+    ['A', 'B', 'C', 'D'].forEach(letter => {
+      const v = votes[letter] || 0;
+      if (v > maxVotes) {
+        maxVotes = v;
+        winner = letter;
+      }
+    });
+    if (maxVotes > 0) {
+      highlightOption = winner;
+    } else {
+      highlightOption = '';
+    }
+  }
+
+  // Highlight correct bar in chart and dim incorrect ones
+  if (currentQuestionVisual === 'bar-chart' || !currentQuestionVisual) {
+    const letters = ['A', 'B', 'C', 'D'];
+    letters.forEach(letter => {
+      const wrapper = document.getElementById(`bar-wrapper-${letter}`);
+      if (wrapper) {
+        if (letter === highlightOption) {
+          wrapper.style.opacity = '1.0';
+          const bar = document.getElementById(`bar-${letter}`);
+          if (bar) {
+            bar.classList.add('correct');
+            bar.style.boxShadow = '0 0 30px var(--color-success), 0 0 10px var(--color-success)';
+          }
+          const label = wrapper.querySelector('.chart-label');
+          if (label && !label.textContent.includes('✓')) {
+            label.textContent += ' ✓';
+          }
+        } else {
+          wrapper.style.opacity = '0.15';
+        }
+      }
+    });
   }
 
   // Highlight correct Coca-Cola glass (if active)
@@ -386,14 +438,17 @@ function revealAnswer(data) {
     const glassA = document.getElementById('cola-liquid-A').parentElement;
     const glassB = document.getElementById('cola-liquid-B').parentElement;
 
-    if (correctOption === 'A') {
+    if (highlightOption === 'A') {
       glassA.style.boxShadow = '0 0 25px var(--color-success)';
       glassA.style.borderColor = 'var(--color-success)';
-      wrapperB.style.opacity = '0.25';
-    } else if (correctOption === 'B') {
+      wrapperB.style.opacity = '0.15';
+    } else if (highlightOption === 'B') {
       glassB.style.boxShadow = '0 0 25px var(--color-success)';
       glassB.style.borderColor = 'var(--color-success)';
-      wrapperA.style.opacity = '0.25';
+      wrapperA.style.opacity = '0.15';
+    } else {
+      wrapperA.style.opacity = '0.15';
+      wrapperB.style.opacity = '0.15';
     }
   }
 
@@ -403,13 +458,20 @@ function revealAnswer(data) {
     const wrapperB = document.getElementById('silhouette-body-B').closest('.silhouette-wrapper');
     const bodyA = document.getElementById('silhouette-body-A');
     const bodyB = document.getElementById('silhouette-body-B');
+    const headA = document.getElementById('silhouette-head-A');
+    const headB = document.getElementById('silhouette-head-B');
 
-    if (correctOption === 'A') {
-      bodyA.style.boxShadow = '0 0 20px var(--color-success)';
-      wrapperB.style.opacity = '0.25';
-    } else if (correctOption === 'B') {
-      bodyB.style.boxShadow = '0 0 20px var(--color-success)';
-      wrapperA.style.opacity = '0.25';
+    if (highlightOption === 'A') {
+      if (bodyA) bodyA.style.filter = 'drop-shadow(0 0 15px var(--color-success))';
+      if (headA) headA.style.filter = 'drop-shadow(0 0 15px var(--color-success))';
+      wrapperB.style.opacity = '0.15';
+    } else if (highlightOption === 'B') {
+      if (bodyB) bodyB.style.filter = 'drop-shadow(0 0 15px var(--color-success))';
+      if (headB) headB.style.filter = 'drop-shadow(0 0 15px var(--color-success))';
+      wrapperA.style.opacity = '0.15';
+    } else {
+      wrapperA.style.opacity = '0.15';
+      wrapperB.style.opacity = '0.15';
     }
   }
 
@@ -420,14 +482,17 @@ function revealAnswer(data) {
     const bowlA = document.getElementById('fishbowl-water-A').parentElement;
     const bowlB = document.getElementById('fishbowl-water-B').parentElement;
 
-    if (correctOption === 'A') {
+    if (highlightOption === 'A') {
       bowlA.style.boxShadow = '0 0 25px var(--color-success)';
       bowlA.style.borderColor = 'var(--color-success)';
-      wrapperB.style.opacity = '0.25';
-    } else if (correctOption === 'B') {
+      wrapperB.style.opacity = '0.15';
+    } else if (highlightOption === 'B') {
       bowlB.style.boxShadow = '0 0 25px var(--color-success)';
       bowlB.style.borderColor = 'var(--color-success)';
-      wrapperA.style.opacity = '0.25';
+      wrapperA.style.opacity = '0.15';
+    } else {
+      wrapperA.style.opacity = '0.15';
+      wrapperB.style.opacity = '0.15';
     }
   }
 

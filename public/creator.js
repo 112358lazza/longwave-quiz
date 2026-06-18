@@ -88,14 +88,14 @@ const DEFAULT_QUIZZES = [
         timer: 25,
         mediaType: "none",
         mediaUrl: "",
-        correctAnswer: 2, // Meno della metà
+        correctAnswer: -1, // No correct answer (Poll!)
         options: [
           "Quasi tutti",
           "Più della metà",
           "Meno della metà",
           "Quasi nessuno"
         ],
-        visualization: "astronaut-reveal"
+        visualization: "bar-chart"
       },
       {
         text: "Quale parola secondo voi rappresenta le quattro prospettive ascoltate oggi (Apollo, Spazio, Fisica, Longwave)?",
@@ -125,6 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const stored = localStorage.getItem('multitemer_quizzes_v2');
   if (stored) {
     quizzes = JSON.parse(stored);
+    // Force-update the default-trivia quiz to ensure Q8 changes (poll settings) are applied
+    const defaultIdx = quizzes.findIndex(q => q.id === 'default-trivia');
+    if (defaultIdx !== -1) {
+      quizzes[defaultIdx] = DEFAULT_QUIZZES[0];
+      saveToStorage();
+    }
   } else {
     quizzes = DEFAULT_QUIZZES;
     saveToStorage();
