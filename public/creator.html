@@ -170,7 +170,12 @@
           </div>
 
           <div class="creator-options-box">
-            <label>Opzioni di Risposta (spunta la risposta corretta)</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+              <label style="margin-bottom: 0;">Opzioni di Risposta (spunta la risposta corretta)</label>
+              <label style="margin-bottom: 0; display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 0.95rem; cursor: pointer; color: var(--text-main);">
+                <input type="checkbox" id="is-poll-checkbox" onchange="handlePollCheckboxChange(this.checked)"> Sondaggio / Nessuna risposta corretta
+              </label>
+            </div>
             
             <!-- Option A -->
             <div class="option-input-wrapper">

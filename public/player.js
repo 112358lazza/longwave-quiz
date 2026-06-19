@@ -87,6 +87,7 @@ socket.on('new-question', (data) => {
 socket.on('answer-acknowledged', (data) => {
   const { isCorrect, pointsEarned, isPoll } = data;
   
+  answeredThisRound = true;
   // Save the result for later when question ends
   window.lastResult = { isCorrect, pointsEarned, isPoll };
 
@@ -112,7 +113,7 @@ socket.on('question-ended', (data) => {
   } else if (window.lastResult) {
     // REVEAL RESULT NOW
     hideFeedbackOverlays();
-    if (window.lastResult.isPoll) {
+    if (window.lastResult.isPoll || data.correctIndex === -1) {
       document.getElementById('overlay-poll-thanks').style.display = 'flex';
     } else if (window.lastResult.isCorrect) {
       document.getElementById('overlay-correct').style.display = 'flex';

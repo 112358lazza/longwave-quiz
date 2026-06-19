@@ -269,11 +269,37 @@ function loadQuestionIntoEditor() {
 
   // Correct answer radio
   const radios = document.getElementsByName('correct-opt');
-  if (radios[q.correctAnswer]) {
-    radios[q.correctAnswer].checked = true;
+  if (q.correctAnswer === -1) {
+    document.getElementById('is-poll-checkbox').checked = true;
+    for (let i = 0; i < radios.length; i++) {
+      radios[i].checked = false;
+      radios[i].disabled = true;
+    }
+  } else {
+    document.getElementById('is-poll-checkbox').checked = false;
+    for (let i = 0; i < radios.length; i++) {
+      radios[i].disabled = false;
+    }
+    if (radios[q.correctAnswer]) {
+      radios[q.correctAnswer].checked = true;
+    }
   }
 
   toggleMediaInput();
+}
+
+function handlePollCheckboxChange(checked) {
+  const radios = document.getElementsByName('correct-opt');
+  for (let i = 0; i < radios.length; i++) {
+    radios[i].disabled = checked;
+    if (checked) {
+      radios[i].checked = false;
+    } else {
+      if (i === 0) {
+        radios[i].checked = true;
+      }
+    }
+  }
 }
 
 function toggleMediaInput() {
@@ -315,19 +341,27 @@ function saveActiveQuestion(e) {
   if (optD) options.push(optD);
 
   // Correct Answer Index
-  let correctAnswer = 0;
-  const radios = document.getElementsByName('correct-opt');
-  for (let i = 0; i < radios.length; i++) {
-    if (radios[i].checked) {
-      correctAnswer = i;
-      break;
+  let correctAnswer = -1;
+  const isPoll = document.getElementById('is-poll-checkbox').checked;
+  if (!isPoll) {
+    const radios = document.getElementsByName('correct-opt');
+    for (let i = 0; i < radios.length; i++) {
+      if (radios[i].checked) {
+        correctAnswer = i;
+        break;
+      }
     }
-  }
 
-  // Check if correct answer option is configured (e.g. checked C but C is empty)
-  if (correctAnswer >= options.length) {
-    alert(`Hai spuntato l'opzione corretta ${String.fromCharCode(65 + correctAnswer)}, ma il relativo testo è vuoto!`);
-    return;
+    if (correctAnswer === -1) {
+      correctAnswer = 0;
+      if (radios[0]) radios[0].checked = true;
+    }
+
+    // Check if correct answer option is configured (e.g. checked C but C is empty)
+    if (correctAnswer >= options.length) {
+      alert(`Hai spuntato l'opzione corretta ${String.fromCharCode(65 + correctAnswer)}, ma il relativo testo è vuoto!`);
+      return;
+    }
   }
 
   const existingQ = quiz.questions[activeQuestionIndex];

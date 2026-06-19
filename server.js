@@ -152,6 +152,15 @@ io.on('connection', (socket) => {
           mediaType: question.mediaType || 'none'
         });
         
+        if (existingPlayer.answered) {
+          const isPoll = (question.correctAnswer === -1 || question.correctAnswer === null || question.correctAnswer === undefined);
+          socket.emit('answer-acknowledged', { 
+            isCorrect: existingPlayer.lastCorrect, 
+            pointsEarned: 0, 
+            isPoll 
+          });
+        }
+        
         const correctOptionLetter = String.fromCharCode(65 + question.correctAnswer);
         socket.emit('question-ended', {
           correctOption: correctOptionLetter,

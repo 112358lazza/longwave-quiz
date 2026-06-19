@@ -42,8 +42,9 @@
         <!-- Populated dynamically via JS -->
       </div>
       
-      <div class="lobby-players-pill" style="margin-top: 2rem; display: inline-block; background: rgba(167, 139, 250, 0.15); padding: 0.5rem 2.5rem; border-radius: 30px; border: 1px solid rgba(167, 139, 250, 0.3);">
-        <span style="font-size: 1.5rem; font-weight: 700; color: #a78bfa;">Giocatori connessi: <span id="players-count-val">0</span></span>
+      <!-- Players count status (Lobby) in the bottom right corner -->
+      <div style="position: fixed; bottom: 30px; right: 40px; font-size: 1rem; font-weight: 700; color: var(--text-muted); z-index: 100;">
+        Giocatori connessi: <span id="players-count-val" style="color: #fff;">0</span>
       </div>
     </div>
 
